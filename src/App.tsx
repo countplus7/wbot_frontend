@@ -1,8 +1,8 @@
-import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'sonner';
-import { BusinessList } from './components/business/BusinessList';
-import './App.css';
+import React from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "sonner";
+import Index from "./pages/Index";
+import "./App.css";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -19,7 +19,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto py-6 px-4">
-          <BusinessList />
+          <Index />
         </div>
         <Toaster position="top-right" />
       </div>

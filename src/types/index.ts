@@ -2,7 +2,7 @@ export interface Business {
   id: string;
   name: string;
   description?: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   created_at: string;
 }
 
@@ -13,7 +13,6 @@ export interface WhatsAppConfig {
   access_token: string;
   verify_token?: string;
   webhook_url?: string;
-  status: 'active' | 'inactive';
 }
 
 export interface BusinessTone {
@@ -23,5 +22,3 @@ export interface BusinessTone {
   description?: string;
   tone_instructions: string;
 }
-
-export type TabType = 'businesses' | 'whatsapp' | 'tones';

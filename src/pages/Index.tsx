@@ -1,8 +1,8 @@
-import React from 'react';
-import Dashboard from '@/components/Dashboard';
+import React from "react";
+import { BusinessList } from "../components/business/BusinessList";
 
 const Index = () => {
-  return <Dashboard />;
+  return <BusinessList />;
 };
 
 export default Index;
