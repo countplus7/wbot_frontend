@@ -1,0 +1,1 @@
+const fs = require("fs"); let content = fs.readFileSync("src/lib/api.ts", "utf8"); content = content.replace("  status: \"active\" | \"inactive\";", ""); fs.writeFileSync("src/lib/api.ts", content); console.log("Updated API types");
