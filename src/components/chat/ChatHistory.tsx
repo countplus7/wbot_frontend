@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, Phone, Calendar, User, Bot, Download, Play, Pause } from "lucide-react";
+import { MessageSquare, Phone, Calendar, User, Bot, Download, Play, Pause, ImageIcon } from "lucide-react";
 import { useBusinessConversations, useConversationMessages } from "@/hooks/useBusinesses";
 import type { Conversation, Message } from "@/lib/api";
 
@@ -12,9 +12,18 @@ interface ChatHistoryProps {
   businessName: string;
 }
 
+// Default image component for when images fail to load
+const DefaultImagePlaceholder: React.FC<{ className?: string }> = ({ className = "" }) => (
+  <div className={`flex flex-col items-center justify-center bg-muted rounded-lg ${className}`}>
+    <ImageIcon className="w-20 h-20 text-muted-foreground mb-2" />
+    <span className="text-sm text-muted-foreground">Image not available</span>
+  </div>
+);
+
 export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessName }) => {
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   const { data: conversations = [], isLoading: conversationsLoading } = useBusinessConversations(businessId);
   const { data: conversationData, isLoading: messagesLoading } = useConversationMessages(
@@ -76,41 +85,38 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
     }
   };
 
+  const handleImageError = (messageId: string) => {
+    setImageErrors((prev) => new Set(prev).add(messageId));
+  };
+
   const renderMediaContent = (message: Message) => {
     if (!message.media_url && !message.file_name) return null;
 
+    // Use the media_url directly from the backend (no construction needed)
     const mediaUrl = message.media_url;
     const fileName = message.file_name || "";
     const fileType = message.file_type;
+    const hasImageError = imageErrors.has(message.message_id);
 
     if (isImageFile(fileName, fileType) && mediaUrl) {
       return (
         <div className="mt-2">
-          <img
-            src={mediaUrl}
-            alt={fileName}
-            className="max-w-full max-h-64 rounded-lg object-contain"
-            onError={(e) => {
-              // Fallback to file name if image fails to load
-              const target = e.target as HTMLImageElement;
-              target.style.display = "none";
-              const fallback = target.nextElementSibling as HTMLElement;
-              if (fallback) fallback.style.display = "block";
-            }}
-          />
-          <div className="hidden text-xs opacity-70 mt-1">📁 {fileName}</div>
-          {fileName && (
-            <div className="mt-1">
-              <a
-                href={mediaUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs underline opacity-70 hover:opacity-100 flex items-center gap-1"
-              >
-                <Download className="w-3 h-3" />
-                Download
-              </a>
-            </div>
+          {hasImageError ? (
+            <DefaultImagePlaceholder className="max-w-full h-64 cursor-pointer" />
+          ) : (
+            <img
+              src={mediaUrl}
+              alt="Image message"
+              className="max-w-full max-h-64 rounded-lg object-contain cursor-pointer"
+              onClick={() => window.open(mediaUrl, "_blank")}
+              onError={(e) => {
+                // Show default image when original fails to load
+                const target = e.target as HTMLImageElement;
+                target.src =
+                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik04NSA3NUgxMTVWMTI1SDg1Vjc1WiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNODUgMTI1TDEwMCAxMTBMMTE1IDEyNUg4NVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+";
+                target.alt = "Image not available";
+              }}
+            />
           )}
         </div>
       );
@@ -139,7 +145,6 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
               />
             </div>
           </div>
-          {fileName && <div className="mt-1 text-xs opacity-70">🎵 {fileName}</div>}
         </div>
       );
     }
@@ -228,7 +233,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
                   <MessageSquare className="w-5 h-5" />
                   Messages
                   {conversationData?.conversation && (
-                    <span className="text-sm font-normal text-muted-foreground">
+                    <span className="text-xl font-semibold text-muted-foreground">
                       - {formatPhoneNumber(conversationData.conversation.phone_number)}
                     </span>
                   )}

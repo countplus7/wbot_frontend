@@ -176,17 +176,23 @@ export const BusinessList: React.FC = () => {
           >
             {formType === "chat-history" ? (
               // Full screen chat history
-              <div className="h-full flex flex-col">
-                <div className="flex items-center justify-between p-6">
-                  <div>
-                    <h2 className="text-2xl font-bold">Chat History - {selectedBusiness?.name}</h2>
-                    <p className="text-muted-foreground">View conversation history and messages</p>
+              <>
+                <DialogHeader className="sr-only">
+                  <DialogTitle>Chat History - {selectedBusiness?.name}</DialogTitle>
+                  <DialogDescription>View conversation history and messages</DialogDescription>
+                </DialogHeader>
+                <div className="h-full flex flex-col">
+                  <div className="flex items-center justify-between p-6">
+                    <div>
+                      <h2 className="text-2xl font-bold">Chat History - {selectedBusiness?.name}</h2>
+                      <p className="text-muted-foreground">View conversation history and messages</p>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <ChatHistory businessId={selectedBusiness?.id || 0} businessName={selectedBusiness?.name || ""} />
                   </div>
                 </div>
-                <div className="flex-1 overflow-hidden">
-                  <ChatHistory businessId={selectedBusiness?.id || 0} businessName={selectedBusiness?.name || ""} />
-                </div>
-              </div>
+              </>
             ) : (
               // Regular modal for other forms
               <>
