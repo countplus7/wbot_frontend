@@ -1,7 +1,7 @@
 // Environment Configuration
 export const ENV_CONFIG = {
-  API_URL: import.meta.env.VITE_API_URL || "http://localhost:8080",
-  API_BASE: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
+  API_URL: import.meta.env.VITE_API_URL || "", // '' for production
+  API_BASE: import.meta.env.VITE_API_BASE || "/api", // relative path in production
   NODE_ENV: import.meta.env.MODE || "development",
 } as const;
 
