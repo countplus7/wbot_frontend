@@ -250,14 +250,16 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
               ) : !conversationData?.messages || conversationData.messages.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground">No messages found in this conversation</div>
               ) : (
-                <div className="space-y-4 p-4">
-                  {conversationData.messages.map((message) => (
+                <div className="space-y-4 p-4 pb-8">
+                  {conversationData.messages.map((message, index) => (
                     <div
                       key={message.id}
-                      className={`flex gap-3 ${message.direction === "inbound" ? "justify-start" : "justify-end"}`}
+                      className={`flex gap-3 ${message.direction === "inbound" ? "justify-start" : "justify-end"} ${
+                        index === conversationData.messages.length - 1 ? "pb-8" : ""
+                      }`}
                     >
                       <div
-                        className={`max-w-[70%] rounded-lg p-3 ${
+                        className={`max-w-[600px] rounded-lg p-3 ${
                           message.direction === "inbound" ? "bg-muted" : "bg-primary text-primary-foreground"
                         }`}
                       >
