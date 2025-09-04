@@ -6,6 +6,53 @@ import type {
   BusinessWithConfigAndTones 
 } from '../api';
 
+// Chat History Types
+export interface Conversation {
+  id: number;
+  phone_number: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  last_message_at: string | null;
+}
+
+export interface Message {
+  id: number;
+  message_id: string;
+  from_number: string;
+  to_number: string;
+  message_type: string;
+  content: string | null;
+  media_url: string | null;
+  direction: 'inbound' | 'outbound';
+  status: string;
+  created_at: string;
+  file_name?: string;
+  file_path?: string;
+  file_type?: string;
+}
+
+export interface ConversationDetails {
+  id: number;
+  business_id: number;
+  phone_number: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  business_name: string;
+}
+
+export interface ConversationWithMessages {
+  conversation: ConversationDetails;
+  messages: Message[];
+  pagination: {
+    limit: number;
+    offset: number;
+    count: number;
+  };
+}
+
 export class BusinessService {
   // Business Management
   async getBusinesses(): Promise<Business[]> {
@@ -119,6 +166,28 @@ export class BusinessService {
     }
   ): Promise<BusinessTone> {
     const response = await apiClient.put<BusinessTone>(`/tones/${id}`, toneData);
+    return response.data;
+  }
+
+  async deleteBusinessTone(id: number): Promise<BusinessTone> {
+    const response = await apiClient.delete<BusinessTone>(`/tones/${id}`);
+    return response.data;
+  }
+
+  // Chat History Management
+  async getBusinessConversations(businessId: number): Promise<Conversation[]> {
+    const response = await apiClient.get<Conversation[]>(`/businesses/${businessId}/conversations`);
+    return response.data;
+  }
+
+  async getConversationMessages(
+    conversationId: number, 
+    limit: number = 50, 
+    offset: number = 0
+  ): Promise<ConversationWithMessages> {
+    const response = await apiClient.get<ConversationWithMessages>(
+      `/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`
+    );
     return response.data;
   }
 }

@@ -1,17 +1,27 @@
-import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Settings, MessageSquare } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useBusinesses, useDeleteBusiness } from '@/hooks/useBusinesses';
-import { BusinessForm } from './BusinessForm';
-import { WhatsAppConfigForm } from './WhatsAppConfigForm';
-import { BusinessToneForm } from './BusinessToneForm';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import type { Business } from '@/lib/api';
+import React, { useState } from "react";
+import { Plus, Edit, Trash2, Settings, MessageSquare, History } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useBusinesses, useDeleteBusiness } from "@/hooks/useBusinesses";
+import { BusinessForm } from "./BusinessForm";
+import { WhatsAppConfigForm } from "./WhatsAppConfigForm";
+import { BusinessToneForm } from "./BusinessToneForm";
+import { ChatHistory } from "../chat/ChatHistory";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import type { Business } from "@/lib/api";
 
-type FormType = 'business' | 'whatsapp' | 'tone' | null;
+type FormType = "business" | "whatsapp" | "tone" | "chat-history" | null;
 
 export const BusinessList: React.FC = () => {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -24,25 +34,31 @@ export const BusinessList: React.FC = () => {
 
   const handleCreateBusiness = () => {
     setSelectedBusiness(null);
-    setFormType('business');
+    setFormType("business");
     setIsFormOpen(true);
   };
 
   const handleEditBusiness = (business: Business) => {
     setSelectedBusiness(business);
-    setFormType('business');
+    setFormType("business");
     setIsFormOpen(true);
   };
 
   const handleWhatsAppConfig = (business: Business) => {
     setSelectedBusiness(business);
-    setFormType('whatsapp');
+    setFormType("whatsapp");
     setIsFormOpen(true);
   };
 
   const handleBusinessTone = (business: Business) => {
     setSelectedBusiness(business);
-    setFormType('tone');
+    setFormType("tone");
+    setIsFormOpen(true);
+  };
+
+  const handleChatHistory = (business: Business) => {
+    setSelectedBusiness(business);
+    setFormType("chat-history");
     setIsFormOpen(true);
   };
 
@@ -65,30 +81,12 @@ export const BusinessList: React.FC = () => {
 
   const renderForm = () => {
     switch (formType) {
-      case 'business':
-        return (
-          <BusinessForm
-            business={selectedBusiness}
-            onSuccess={closeForm}
-            onCancel={closeForm}
-          />
-        );
-      case 'whatsapp':
-        return (
-          <WhatsAppConfigForm
-            businessId={selectedBusiness?.id || 0}
-            onSuccess={closeForm}
-            onCancel={closeForm}
-          />
-        );
-      case 'tone':
-        return (
-          <BusinessToneForm
-            businessId={selectedBusiness?.id || 0}
-            onSuccess={closeForm}
-            onCancel={closeForm}
-          />
-        );
+      case "business":
+        return <BusinessForm business={selectedBusiness} onSuccess={closeForm} onCancel={closeForm} />;
+      case "whatsapp":
+        return <WhatsAppConfigForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
+      case "tone":
+        return <BusinessToneForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
       default:
         return null;
     }
@@ -96,144 +94,134 @@ export const BusinessList: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading businesses...</div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Loading businesses...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-red-600">Error: {error.message}</div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-destructive">Error loading businesses: {error.message}</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Business Management</h1>
-          <p className="text-muted-foreground">
-            Manage your businesses, WhatsApp configurations, and AI response tones
-          </p>
+          <h1 className="text-3xl font-bold">Business Management</h1>
+          <p className="text-muted-foreground">Manage your businesses, WhatsApp configurations, and AI tones</p>
         </div>
-        <Button onClick={handleCreateBusiness}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={handleCreateBusiness} className="bg-primary hover:bg-primary/90">
+          <Plus className="w-4 h-4 mr-2" />
           Add Business
         </Button>
       </div>
 
-      {businesses.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="text-center">
-              <h3 className="text-lg font-semibold">No businesses found</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first business to get started with WhatsApp AI Bot
-              </p>
-              <Button onClick={handleCreateBusiness}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Business
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {businesses.map((business) => (
-            <Card key={business.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-lg">{business.name}</CardTitle>
-                    <CardDescription className="line-clamp-2">
-                      {business.description || 'No description'}
-                    </CardDescription>
-                  </div>
-                  <Badge variant={business.status === 'active' ? 'default' : 'secondary'}>
-                    {business.status}
-                  </Badge>
+      {/* Businesses Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {businesses.map((business) => (
+          <Card key={business.id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{business.name}</CardTitle>
+                <Badge variant={business.status === "active" ? "default" : "secondary"}>{business.status}</Badge>
+              </div>
+              {business.description && <CardDescription>{business.description}</CardDescription>}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground">
+                  Created: {new Date(business.created_at).toLocaleDateString()}
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
                 <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditBusiness(business)}
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
+                  <Button size="sm" variant="outline" onClick={() => handleEditBusiness(business)}>
+                    <Edit className="w-3 h-3 mr-1" />
                     Edit
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleWhatsAppConfig(business)}
-                  >
-                    <Settings className="mr-2 h-4 w-4" />
+                  <Button size="sm" variant="outline" onClick={() => handleWhatsAppConfig(business)}>
+                    <Settings className="w-3 h-3 mr-1" />
                     WhatsApp
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleBusinessTone(business)}
-                  >
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Tones
+                  <Button size="sm" variant="outline" onClick={() => handleBusinessTone(business)}>
+                    <MessageSquare className="w-3 h-3 mr-1" />
+                    Tone
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteBusiness(business)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
+                  <Button size="sm" variant="outline" onClick={() => handleChatHistory(business)}>
+                    <History className="w-3 h-3 mr-1" />
+                    Chat History
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleDeleteBusiness(business)}>
+                    <Trash2 className="w-3 h-3 mr-1" />
                     Delete
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {/* Form Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {formType === 'business' && (selectedBusiness ? 'Edit Business' : 'Create Business')}
-              {formType === 'whatsapp' && 'WhatsApp Configuration'}
-              {formType === 'tone' && 'Business Tone'}
-            </DialogTitle>
-            <DialogDescription>
-              {formType === 'business' && (selectedBusiness ? 'Update the business information below.' : 'Create a new business by filling out the form below.')}
-              {formType === 'whatsapp' && 'Configure WhatsApp settings for this business.'}
-              {formType === 'tone' && 'Set up the communication tone for this business.'}
-            </DialogDescription>
-          </DialogHeader>
-          {renderForm()}
-        </DialogContent>
-      </Dialog>
+      {/* Forms Modal */}
+      {isFormOpen && (
+        <Dialog open={isFormOpen} onOpenChange={closeForm}>
+          <DialogContent
+            className={`${
+              formType === "chat-history" ? "max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh]" : "max-w-4xl max-h-[90vh]"
+            } overflow-hidden`}
+          >
+            {formType === "chat-history" ? (
+              // Full screen chat history
+              <div className="h-full flex flex-col">
+                <div className="flex items-center justify-between p-6">
+                  <div>
+                    <h2 className="text-2xl font-bold">Chat History - {selectedBusiness?.name}</h2>
+                    <p className="text-muted-foreground">View conversation history and messages</p>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <ChatHistory businessId={selectedBusiness?.id || 0} businessName={selectedBusiness?.name || ""} />
+                </div>
+              </div>
+            ) : (
+              // Regular modal for other forms
+              <>
+                <DialogHeader>
+                  <DialogTitle>
+                    {formType === "business" && (selectedBusiness ? "Edit Business" : "Create Business")}
+                    {formType === "whatsapp" && "WhatsApp Configuration"}
+                    {formType === "tone" && "Business Tone"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    {formType === "business" && "Manage business information"}
+                    {formType === "whatsapp" && "Configure WhatsApp Business API settings"}
+                    {formType === "tone" && "Set AI response tone and personality"}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="overflow-y-auto">{renderForm()}</div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!businessToDelete} onOpenChange={() => setBusinessToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Delete Business</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the business
-              "{businessToDelete?.name}" and all associated data.
+              Are you sure you want to delete "{businessToDelete?.name}"? This action cannot be undone. All associated
+              WhatsApp configurations, tones, and chat history will also be deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -241,4 +229,4 @@ export const BusinessList: React.FC = () => {
       </AlertDialog>
     </div>
   );
-}; 
+};

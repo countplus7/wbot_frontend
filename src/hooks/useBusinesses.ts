@@ -245,3 +245,51 @@ export const useUpdateBusinessTone = () => {
     },
   });
 };
+
+// Delete business tone mutation
+export const useDeleteBusinessTone = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => businessService.deleteBusinessTone(id),
+    onSuccess: (tone) => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.tone(tone.business_id) });
+      queryClient.invalidateQueries({ queryKey: businessKeys.detail(tone.business_id) });
+      toast.success('Business tone deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete business tone: ${error.message}`);
+    },
+  });
+};
+
+// Chat History Query Keys
+export const chatKeys = {
+  all: ['chat'] as const,
+  conversations: (businessId: number) => [...chatKeys.all, 'conversations', businessId] as const,
+  messages: (conversationId: number) => [...chatKeys.all, 'messages', conversationId] as const,
+};
+
+// Get business conversations
+export const useBusinessConversations = (businessId: number) => {
+  return useQuery({
+    queryKey: chatKeys.conversations(businessId),
+    queryFn: () => businessService.getBusinessConversations(businessId),
+    enabled: !!businessId,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+};
+
+// Get conversation messages
+export const useConversationMessages = (
+  conversationId: number, 
+  limit: number = 50, 
+  offset: number = 0
+) => {
+  return useQuery({
+    queryKey: [...chatKeys.messages(conversationId), { limit, offset }],
+    queryFn: () => businessService.getConversationMessages(conversationId, limit, offset),
+    enabled: !!conversationId,
+    staleTime: 10 * 1000, // 10 seconds
+  });
+};

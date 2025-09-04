@@ -51,6 +51,53 @@ export interface BusinessWithConfigAndTones extends Business {
   tones: BusinessTone[];
 }
 
+// Chat History Types
+export interface Conversation {
+  id: number;
+  phone_number: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+  last_message_at: string | null;
+}
+
+export interface Message {
+  id: number;
+  message_id: string;
+  from_number: string;
+  to_number: string;
+  message_type: string;
+  content: string | null;
+  media_url: string | null;
+  direction: 'inbound' | 'outbound';
+  status: string;
+  created_at: string;
+  file_name?: string;
+  file_path?: string;
+  file_type?: string;
+}
+
+export interface ConversationDetails {
+  id: number;
+  business_id: number;
+  phone_number: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  business_name: string;
+}
+
+export interface ConversationWithMessages {
+  conversation: ConversationDetails;
+  messages: Message[];
+  pagination: {
+    limit: number;
+    offset: number;
+    count: number;
+  };
+}
+
 // API Client Class
 class ApiClient {
   private baseURL: string;
@@ -121,7 +168,7 @@ export const apiClient = new ApiClient(API_CONFIG.API_BASE);
 // Health check function
 export const checkApiHealth = async () => {
   try {
-    const response = await fetch(`${API_CONFIG.BASE_URL}/health`);
+    const response = await fetch(`${API_CONFIG.API_BASE}/health`);
     return response.ok;
   } catch (error) {
     console.error('Health check failed:', error);
