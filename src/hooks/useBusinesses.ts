@@ -293,3 +293,22 @@ export const useConversationMessages = (
     staleTime: 10 * 1000, // 10 seconds
   });
 };
+
+// Delete conversation mutation
+export const useDeleteConversation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: number) => businessService.deleteConversation(conversationId),
+    onSuccess: (deletedConversation) => {
+      // Invalidate conversations list for the business
+      queryClient.invalidateQueries({ 
+        queryKey: chatKeys.conversations(deletedConversation.business_id) 
+      });
+      toast.success('Conversation deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete conversation: ${error.message}`);
+    },
+  });
+};

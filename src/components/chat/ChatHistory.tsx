@@ -3,8 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, Phone, Calendar, User, Bot, Download, Play, Pause, ImageIcon } from "lucide-react";
-import { useBusinessConversations, useConversationMessages } from "@/hooks/useBusinesses";
+import { MessageSquare, Phone, Calendar, User, Bot, Download, Play, Pause, ImageIcon, Trash2 } from "lucide-react";
+import { useBusinessConversations, useConversationMessages, useDeleteConversation } from "@/hooks/useBusinesses";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { Conversation, Message } from "@/lib/api";
 
 interface ChatHistoryProps {
@@ -15,7 +25,7 @@ interface ChatHistoryProps {
 // Default image component for when images fail to load
 const DefaultImagePlaceholder: React.FC<{ className?: string }> = ({ className = "" }) => (
   <div className={`flex flex-col items-center justify-center bg-muted rounded-lg ${className}`}>
-    <ImageIcon className="w-20 h-20 text-muted-foreground mb-2" />
+    <ImageIcon className="w-12 h-12 text-muted-foreground mb-2" />
     <span className="text-sm text-muted-foreground">Image not available</span>
   </div>
 );
@@ -24,6 +34,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
   const [selectedConversationId, setSelectedConversationId] = useState<number | null>(null);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
 
   const { data: conversations = [], isLoading: conversationsLoading } = useBusinessConversations(businessId);
   const { data: conversationData, isLoading: messagesLoading } = useConversationMessages(
@@ -31,6 +42,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
     100, // Load more messages
     0
   );
+  const deleteConversation = useDeleteConversation();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
@@ -89,6 +101,23 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
     setImageErrors((prev) => new Set(prev).add(messageId));
   };
 
+  const handleDeleteConversation = (conversation: Conversation, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent conversation selection
+    setConversationToDelete(conversation);
+  };
+
+  const confirmDeleteConversation = async () => {
+    if (conversationToDelete) {
+      await deleteConversation.mutateAsync(conversationToDelete.id);
+      setConversationToDelete(null);
+
+      // If the deleted conversation was selected, clear the selection
+      if (selectedConversationId === conversationToDelete.id) {
+        setSelectedConversationId(null);
+      }
+    }
+  };
+
   const renderMediaContent = (message: Message) => {
     if (!message.media_url && !message.file_name) return null;
 
@@ -109,13 +138,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
               alt="Image message"
               className="max-w-full max-h-64 rounded-lg object-contain cursor-pointer"
               onClick={() => window.open(mediaUrl, "_blank")}
-              onError={(e) => {
-                // Show default image when original fails to load
-                const target = e.target as HTMLImageElement;
-                target.src =
-                  "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxwYXRoIGQ9Ik04NSA3NUgxMTVWMTI1SDg1Vjc1WiIgZmlsbD0iIzlDQTNBRiIvPgo8cGF0aCBkPSJNODUgMTI1TDEwMCAxMTBMMTE1IDEyNUg4NVoiIGZpbGw9IiM5Q0EzQUYiLz4KPC9zdmc+";
-                target.alt = "Image not available";
-              }}
+              onError={() => handleImageError(message.message_id)}
             />
           )}
         </div>
@@ -202,9 +225,19 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
                           <Phone className="w-4 h-4 text-muted-foreground" />
                           <span className="font-medium">{formatPhoneNumber(conversation.phone_number)}</span>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          {conversation.message_count} messages
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">
+                            {conversation.message_count} messages
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => handleDeleteConversation(conversation, e)}
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Calendar className="w-3 h-3" />
@@ -286,6 +319,30 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!conversationToDelete} onOpenChange={() => setConversationToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Conversation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this conversation with{" "}
+              {conversationToDelete && formatPhoneNumber(conversationToDelete.phone_number)}? This action cannot be
+              undone and will permanently delete all messages and media files in this conversation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteConversation}
+              className="bg-destructive text-destructive-foreground"
+              disabled={deleteConversation.isPending}
+            >
+              {deleteConversation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

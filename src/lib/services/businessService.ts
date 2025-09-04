@@ -1,10 +1,5 @@
-import { apiClient } from '../api';
-import type { 
-  Business, 
-  WhatsAppConfig, 
-  BusinessTone, 
-  BusinessWithConfigAndTones 
-} from '../api';
+import { apiClient } from "../api";
+import type { Business, WhatsAppConfig, BusinessTone, BusinessWithConfigAndTones } from "../api";
 
 // Chat History Types
 export interface Conversation {
@@ -25,7 +20,7 @@ export interface Message {
   message_type: string;
   content: string | null;
   media_url: string | null;
-  direction: 'inbound' | 'outbound';
+  direction: "inbound" | "outbound";
   status: string;
   created_at: string;
   file_name?: string;
@@ -56,7 +51,7 @@ export interface ConversationWithMessages {
 export class BusinessService {
   // Business Management
   async getBusinesses(): Promise<Business[]> {
-    const response = await apiClient.get<Business[]>('/businesses');
+    const response = await apiClient.get<Business[]>("/businesses");
     return response.data;
   }
 
@@ -68,18 +63,18 @@ export class BusinessService {
   async createBusiness(businessData: {
     name: string;
     description?: string;
-    status?: 'active' | 'inactive';
+    status?: "active" | "inactive";
   }): Promise<Business> {
-    const response = await apiClient.post<Business>('/businesses', businessData);
+    const response = await apiClient.post<Business>("/businesses", businessData);
     return response.data;
   }
 
   async updateBusiness(
-    id: number, 
+    id: number,
     businessData: {
       name: string;
       description?: string;
-      status?: 'active' | 'inactive';
+      status?: "active" | "inactive";
     }
   ): Promise<Business> {
     const response = await apiClient.put<Business>(`/businesses/${id}`, businessData);
@@ -110,10 +105,7 @@ export class BusinessService {
       webhook_url?: string;
     }
   ): Promise<WhatsAppConfig> {
-    const response = await apiClient.post<WhatsAppConfig>(
-      `/businesses/${businessId}/whatsapp-config`,
-      configData
-    );
+    const response = await apiClient.post<WhatsAppConfig>(`/businesses/${businessId}/whatsapp-config`, configData);
     return response.data;
   }
 
@@ -149,10 +141,7 @@ export class BusinessService {
       tone_instructions: string;
     }
   ): Promise<BusinessTone> {
-    const response = await apiClient.post<BusinessTone>(
-      `/businesses/${businessId}/tone`,
-      toneData
-    );
+    const response = await apiClient.post<BusinessTone>(`/businesses/${businessId}/tone`, toneData);
     return response.data;
   }
 
@@ -181,8 +170,8 @@ export class BusinessService {
   }
 
   async getConversationMessages(
-    conversationId: number, 
-    limit: number = 50, 
+    conversationId: number,
+    limit: number = 50,
     offset: number = 0
   ): Promise<ConversationWithMessages> {
     const response = await apiClient.get<ConversationWithMessages>(
@@ -190,7 +179,13 @@ export class BusinessService {
     );
     return response.data;
   }
+
+  // Delete a conversation
+  async deleteConversation(conversationId: number): Promise<ConversationDetails> {
+    const response = await apiClient.delete<ConversationDetails>(`/conversations/${conversationId}`);
+    return response.data;
+  }
 }
 
 // Export singleton instance
-export const businessService = new BusinessService(); 
+export const businessService = new BusinessService();
