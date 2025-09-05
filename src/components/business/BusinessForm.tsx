@@ -1,19 +1,19 @@
-import React from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useCreateBusiness, useUpdateBusiness } from '@/hooks/useBusinesses';
-import type { Business } from '@/lib/api';
+import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useCreateBusiness, useUpdateBusiness } from "@/hooks/useBusinesses";
+import type { Business } from "@/lib/api";
 
 const businessSchema = z.object({
-  name: z.string().min(1, 'Business name is required').max(100, 'Business name cannot exceed 100 characters'),
-  description: z.string().max(500, 'Description cannot exceed 500 characters').optional(),
-  status: z.enum(['active', 'inactive']).default('active'),
+  name: z.string().min(1, "Business name is required").max(100, "Business name cannot exceed 100 characters"),
+  description: z.string().max(500, "Description cannot exceed 500 characters").optional(),
+  status: z.enum(["active", "inactive"]).default("active"),
 });
 
 type BusinessFormData = z.infer<typeof businessSchema>;
@@ -24,11 +24,7 @@ interface BusinessFormProps {
   onCancel: () => void;
 }
 
-export const BusinessForm: React.FC<BusinessFormProps> = ({
-  business,
-  onSuccess,
-  onCancel,
-}) => {
+export const BusinessForm: React.FC<BusinessFormProps> = ({ business, onSuccess, onCancel }) => {
   const isEditing = !!business;
   const createBusiness = useCreateBusiness();
   const updateBusiness = useUpdateBusiness();
@@ -36,28 +32,28 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
   const form = useForm<BusinessFormData>({
     resolver: zodResolver(businessSchema),
     defaultValues: {
-      name: business?.name || '',
-      description: business?.description || '',
-      status: business?.status || 'active',
+      name: business?.name || "",
+      description: business?.description || "",
+      status: business?.status || "active",
     },
   });
 
   const onSubmit = async (data: BusinessFormData) => {
     try {
       if (isEditing && business) {
-        await updateBusiness.mutateAsync({ 
-          id: business.id, 
+        await updateBusiness.mutateAsync({
+          id: business.id,
           data: {
             name: data.name,
             description: data.description,
-            status: data.status
-          }
+            status: data.status,
+          },
         });
       } else {
         await createBusiness.mutateAsync({
           name: data.name,
           description: data.description,
-          status: data.status
+          status: data.status,
         });
       }
       onSuccess();
@@ -90,13 +86,9 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Description (Optional)</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Enter business description (optional)"
-                  className="min-h-[80px]"
-                  {...field}
-                />
+                <Textarea placeholder="Enter business description (optional)" className="min-h-[80px]" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -130,10 +122,10 @@ export const BusinessForm: React.FC<BusinessFormProps> = ({
             Cancel
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : (isEditing ? 'Update' : 'Create')}
+            {isLoading ? "Saving..." : isEditing ? "Update" : "Create"}
           </Button>
         </div>
       </form>
     </Form>
   );
-}; 
+};

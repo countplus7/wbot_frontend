@@ -123,7 +123,7 @@ export const BusinessList: React.FC = () => {
       </div>
 
       {/* Businesses Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div>
         {businesses.map((business) => (
           <Card key={business.id} className="hover:shadow-lg transition-shadow">
             <CardHeader>
@@ -131,35 +131,35 @@ export const BusinessList: React.FC = () => {
                 <CardTitle className="text-lg">{business.name}</CardTitle>
                 <Badge variant={business.status === "active" ? "default" : "secondary"}>{business.status}</Badge>
               </div>
-              {business.description && <CardDescription>{business.description}</CardDescription>}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="text-sm text-muted-foreground">
+              <div className="flex items-center justify-between">
+                <CardDescription className="text-start">{business.description}</CardDescription>
+                <div className="text-sm text-end text-muted-foreground">
                   Created: {new Date(business.created_at).toLocaleDateString()}
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleEditBusiness(business)}>
-                    <Edit className="w-3 h-3 mr-1" />
-                    Edit
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleWhatsAppConfig(business)}>
-                    <Settings className="w-3 h-3 mr-1" />
-                    WhatsApp
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleBusinessTone(business)}>
-                    <MessageSquare className="w-3 h-3 mr-1" />
-                    Tone
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleChatHistory(business)}>
-                    <History className="w-3 h-3 mr-1" />
-                    Chat History
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDeleteBusiness(business)}>
-                    <Trash2 className="w-3 h-3 mr-1" />
-                    Delete
-                  </Button>
-                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => handleEditBusiness(business)}>
+                  <Edit className="w-3 h-3 mr-1" />
+                  Edit
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleWhatsAppConfig(business)}>
+                  <Settings className="w-3 h-3 mr-1" />
+                  WhatsApp
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleBusinessTone(business)}>
+                  <MessageSquare className="w-3 h-3 mr-1" />
+                  Tone
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => handleChatHistory(business)}>
+                  <History className="w-3 h-3 mr-1" />
+                  Chat History
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => handleDeleteBusiness(business)}>
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  Delete
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -208,7 +208,7 @@ export const BusinessList: React.FC = () => {
                     {formType === "tone" && "Set AI response tone and personality"}
                   </DialogDescription>
                 </DialogHeader>
-                <div className="overflow-y-auto">{renderForm()}</div>
+                <div className="overflow-y-auto px-2">{renderForm()}</div>
               </>
             )}
           </DialogContent>

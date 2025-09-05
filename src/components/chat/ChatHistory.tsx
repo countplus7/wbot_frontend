@@ -131,7 +131,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
       return (
         <div className="mt-2">
           {hasImageError ? (
-            <DefaultImagePlaceholder className="max-w-full h-64 cursor-pointer" />
+            <DefaultImagePlaceholder className="max-w-full h-20 cursor-pointer" />
           ) : (
             <img
               src={mediaUrl}
@@ -201,7 +201,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
-              Conversations - {businessName}
+              <p className="text-xl">Conversations</p>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -264,22 +264,17 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
               {selectedConversationId ? (
                 <div className="flex items-center gap-2">
                   <MessageSquare className="w-5 h-5" />
-                  Messages
-                  {conversationData?.conversation && (
-                    <span className="text-xl font-semibold text-muted-foreground">
-                      - {formatPhoneNumber(conversationData.conversation.phone_number)}
-                    </span>
-                  )}
+                  <p className="text-xl">Messages</p>
                 </div>
               ) : (
-                "Select a conversation to view messages"
+                <p className="text-xl">Select a conversation to view messages</p>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[calc(100vh-200px)]">
               {!selectedConversationId ? (
-                <div className="p-8 text-center text-muted-foreground">
+                <div className="py-32 text-center text-muted-foreground">
                   <MessageSquare className="w-12 h-12 mx-auto mb-4 opacity-50" />
                   <p>Select a conversation from the list to view messages</p>
                 </div>
