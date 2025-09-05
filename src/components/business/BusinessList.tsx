@@ -112,9 +112,10 @@ export const BusinessList: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
+        <div className="text-start">
           <h1 className="text-3xl font-bold">Business Management</h1>
-          <p className="text-muted-foreground">Manage your businesses, WhatsApp configurations, and AI tones</p>
+          <p className="text-muted-foreground">Manage all businesses, WhatsApp configurations, and AI tones.</p>
+          <p className="text-muted-foreground">Monitor and review chat histories across all businesses.</p>
         </div>
         <Button onClick={handleCreateBusiness} className="bg-primary hover:bg-primary/90">
           <Plus className="w-4 h-4 mr-2" />
