@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { Plus, Edit, Trash2, Settings, MessageSquare, History } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Plus, Edit, Trash2, Settings, MessageSquare, History, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { useBusinesses, useDeleteBusiness } from "@/hooks/useBusinesses";
 import { BusinessForm } from "./BusinessForm";
 import { WhatsAppConfigForm } from "./WhatsAppConfigForm";
@@ -28,9 +29,23 @@ export const BusinessList: React.FC = () => {
   const [formType, setFormType] = useState<FormType>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [businessToDelete, setBusinessToDelete] = useState<Business | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: businesses = [], isLoading, error } = useBusinesses();
   const deleteBusiness = useDeleteBusiness();
+
+  // Filter businesses based on search query
+  const filteredBusinesses = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return businesses;
+    }
+
+    return businesses.filter(
+      (business) =>
+        business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        business.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [businesses, searchQuery]);
 
   const handleCreateBusiness = () => {
     setSelectedBusiness(null);
@@ -50,7 +65,7 @@ export const BusinessList: React.FC = () => {
     setIsFormOpen(true);
   };
 
-  const handleBusinessTone = (business: Business) => {
+  const handleToneConfig = (business: Business) => {
     setSelectedBusiness(business);
     setFormType("tone");
     setIsFormOpen(true);
@@ -75,8 +90,8 @@ export const BusinessList: React.FC = () => {
 
   const closeForm = () => {
     setIsFormOpen(false);
-    setSelectedBusiness(null);
     setFormType(null);
+    setSelectedBusiness(null);
   };
 
   const renderForm = () => {
@@ -123,49 +138,77 @@ export const BusinessList: React.FC = () => {
         </Button>
       </div>
 
-      {/* Businesses Grid */}
-      <div>
-        {businesses.map((business) => (
-          <Card key={business.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">{business.name}</CardTitle>
-                <Badge variant={business.status === "active" ? "default" : "secondary"}>{business.status}</Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <CardDescription className="text-start">{business.description}</CardDescription>
-                <div className="text-sm text-end text-muted-foreground">
-                  Created: {new Date(business.created_at).toLocaleDateString()}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleEditBusiness(business)}>
-                  <Edit className="w-3 h-3 mr-1" />
-                  Edit
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleWhatsAppConfig(business)}>
-                  <Settings className="w-3 h-3 mr-1" />
-                  WhatsApp
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleBusinessTone(business)}>
-                  <MessageSquare className="w-3 h-3 mr-1" />
-                  Tone
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleChatHistory(business)}>
-                  <History className="w-3 h-3 mr-1" />
-                  Chat History
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => handleDeleteBusiness(business)}>
-                  <Trash2 className="w-3 h-3 mr-1" />
-                  Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Search Section */}
+      <div className="space-y-4">
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Input
+            placeholder="Search businesses by name or description..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {searchQuery && (
+          <div className="text-sm text-muted-foreground">
+            {filteredBusinesses.length} of {businesses.length} businesses
+          </div>
+        )}
       </div>
+
+      {/* Business Cards */}
+      {filteredBusinesses.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-muted-foreground">
+            {searchQuery
+              ? "No businesses found matching your search."
+              : "No businesses found. Create your first business to get started."}
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredBusinesses.map((business) => (
+            <Card key={business.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">{business.name}</CardTitle>
+                  <Badge variant={business.status === "active" ? "default" : "secondary"}>{business.status}</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <CardDescription className="text-start">{business.description}</CardDescription>
+                  <div className="text-sm text-end text-muted-foreground">
+                    Created: {new Date(business.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => handleEditBusiness(business)}>
+                    <Edit className="w-3 h-3 mr-1" />
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleWhatsAppConfig(business)}>
+                    <Settings className="w-3 h-3 mr-1" />
+                    WhatsApp
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleToneConfig(business)}>
+                    <MessageSquare className="w-3 h-3 mr-1" />
+                    Tone
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleChatHistory(business)}>
+                    <History className="w-3 h-3 mr-1" />
+                    Chat History
+                  </Button>
+                  <Button size="sm" variant="destructive" onClick={() => handleDeleteBusiness(business)}>
+                    <Trash2 className="w-3 h-3 mr-1" />
+                    Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Forms Modal */}
       {isFormOpen && (
@@ -180,33 +223,35 @@ export const BusinessList: React.FC = () => {
               <>
                 <DialogHeader className="sr-only">
                   <DialogTitle>Chat History - {selectedBusiness?.name}</DialogTitle>
-                  <DialogDescription>View conversation history and messages</DialogDescription>
+                  <DialogDescription>View conversation history for this business</DialogDescription>
                 </DialogHeader>
                 <div className="h-full flex flex-col">
                   <div className="flex items-center justify-between p-6">
                     <div>
                       <h2 className="text-2xl font-bold">Chat History - {selectedBusiness?.name}</h2>
-                      <p className="text-muted-foreground">View conversation history and messages</p>
+                      <p className="text-muted-foreground">View conversation history for this business</p>
                     </div>
                   </div>
                   <div className="flex-1 overflow-hidden">
-                    <ChatHistory businessId={selectedBusiness?.id || 0} businessName={selectedBusiness?.name || ""} />
+                    {selectedBusiness && (
+                      <ChatHistory businessId={selectedBusiness.id} businessName={selectedBusiness.name} />
+                    )}
                   </div>
                 </div>
               </>
             ) : (
-              // Regular modal for other forms
+              // Regular form modal
               <>
                 <DialogHeader>
                   <DialogTitle>
                     {formType === "business" && (selectedBusiness ? "Edit Business" : "Create Business")}
                     {formType === "whatsapp" && "WhatsApp Configuration"}
-                    {formType === "tone" && "Business Tone"}
+                    {formType === "tone" && "Business Tone Configuration"}
                   </DialogTitle>
                   <DialogDescription>
-                    {formType === "business" && "Manage business information"}
-                    {formType === "whatsapp" && "Configure WhatsApp Business API settings"}
-                    {formType === "tone" && "Set AI response tone and personality"}
+                    {formType === "business" && "Manage business information and settings."}
+                    {formType === "whatsapp" && "Configure WhatsApp Business API settings for this business."}
+                    {formType === "tone" && "Set the AI response tone and personality for this business."}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="overflow-y-auto px-2">{renderForm()}</div>
@@ -222,13 +267,16 @@ export const BusinessList: React.FC = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Business</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{businessToDelete?.name}"? This action cannot be undone. All associated
-              WhatsApp configurations, tones, and chat history will also be deleted.
+              Are you sure you want to delete "{businessToDelete?.name}"? This action cannot be undone and will also
+              delete all associated WhatsApp configurations, tones, and chat history.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
