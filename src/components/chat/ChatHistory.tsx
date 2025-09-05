@@ -136,7 +136,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
             <img
               src={mediaUrl}
               alt="Image message"
-              className="max-w-full max-h-64 rounded-lg object-contain cursor-pointer"
+              className="w-[200px] h-auto rounded-lg object-contain cursor-pointer"
               onClick={() => window.open(mediaUrl, "_blank")}
               onError={() => handleImageError(message.message_id)}
             />
