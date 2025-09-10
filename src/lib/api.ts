@@ -1,4 +1,4 @@
-import { API_CONFIG } from '../config/environment';
+import { API_CONFIG } from "../config/environment";
 
 // API Response Types
 export interface ApiResponse<T = unknown> {
@@ -19,7 +19,7 @@ export interface Business {
   id: number;
   name: string;
   description?: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   created_at: string;
   updated_at: string;
 }
@@ -51,6 +51,22 @@ export interface BusinessWithConfigAndTones extends Business {
   tones: BusinessTone[];
 }
 
+// Google Workspace Types
+export interface GoogleWorkspaceIntegration {
+  id: number;
+  business_id: number;
+  provider: string;
+  email: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GoogleIntegrationStatus {
+  isIntegrated: boolean;
+  email?: string;
+  lastUpdated?: string;
+}
+
 // Chat History Types
 export interface Conversation {
   id: number;
@@ -70,7 +86,7 @@ export interface Message {
   message_type: string;
   content: string | null;
   media_url: string | null;
-  direction: 'inbound' | 'outbound';
+  direction: "inbound" | "outbound";
   status: string;
   created_at: string;
   file_name?: string;
@@ -106,15 +122,12 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const config: RequestInit = {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...options.headers,
       },
       ...options,
@@ -130,20 +143,20 @@ class ApiClient {
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error("API request failed:", error);
       throw error;
     }
   }
 
   // GET request
   async get<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: 'GET' });
+    return this.request<T>(endpoint, { method: "GET" });
   }
 
   // POST request
   async post<T>(endpoint: string, data: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
@@ -151,16 +164,54 @@ class ApiClient {
   // PUT request
   async put<T>(endpoint: string, data: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   }
 
   // DELETE request
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+    return this.request<T>(endpoint, { method: "DELETE" });
   }
 }
+
+// Simple API object for Google integration
+export const api = {
+  get: async (endpoint: string) => {
+    const url = `${API_CONFIG.API_BASE}${endpoint}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+  },
+
+  post: async (endpoint: string, data?: unknown) => {
+    const url = `${API_CONFIG.API_BASE}${endpoint}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: data ? JSON.stringify(data) : undefined,
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+  },
+
+  delete: async (endpoint: string) => {
+    const url = `${API_CONFIG.API_BASE}${endpoint}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+  },
+};
 
 // Create API client instance
 export const apiClient = new ApiClient(API_CONFIG.API_BASE);
@@ -171,7 +222,7 @@ export const checkApiHealth = async () => {
     const response = await fetch(`${API_CONFIG.API_BASE}/health`);
     return response.ok;
   } catch (error) {
-    console.error('Health check failed:', error);
+    console.error("Health check failed:", error);
     return false;
   }
-}; 
+};

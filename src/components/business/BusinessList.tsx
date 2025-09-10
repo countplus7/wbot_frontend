@@ -8,6 +8,7 @@ import { useBusinesses, useDeleteBusiness } from "@/hooks/useBusinesses";
 import { BusinessForm } from "./BusinessForm";
 import { WhatsAppConfigForm } from "./WhatsAppConfigForm";
 import { BusinessToneForm } from "./BusinessToneForm";
+import { GoogleWorkspaceConfigForm } from "./GoogleWorkspaceConfigForm";
 import { ChatHistory } from "../chat/ChatHistory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Business } from "@/lib/api";
 
-type FormType = "business" | "whatsapp" | "tone" | "chat-history" | null;
+type FormType = "business" | "whatsapp" | "tone" | "chat-history" | "google" | null;
 
 export const BusinessList: React.FC = () => {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -71,6 +72,12 @@ export const BusinessList: React.FC = () => {
     setIsFormOpen(true);
   };
 
+  const handleGoogleConfig = (business: Business) => {
+    setSelectedBusiness(business);
+    setFormType("google");
+    setIsFormOpen(true);
+  };
+
   const handleChatHistory = (business: Business) => {
     setSelectedBusiness(business);
     setFormType("chat-history");
@@ -102,6 +109,14 @@ export const BusinessList: React.FC = () => {
         return <WhatsAppConfigForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
       case "tone":
         return <BusinessToneForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
+      case "google":
+        return (
+          <GoogleWorkspaceConfigForm
+            businessId={selectedBusiness?.id || 0}
+            onSuccess={closeForm}
+            onCancel={closeForm}
+          />
+        );
       default:
         return null;
     }
@@ -194,6 +209,12 @@ export const BusinessList: React.FC = () => {
                   <Button size="sm" variant="outline" onClick={() => handleToneConfig(business)}>
                     <MessageSquare className="w-3 h-3 mr-1" />
                     Tone
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => handleGoogleConfig(business)}>
+                    <div className="w-3 h-3 mr-1 bg-blue-600 rounded-sm flex items-center justify-center">
+                      <span className="text-white font-bold text-[8px]">G</span>
+                    </div>
+                    Google
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => handleChatHistory(business)}>
                     <History className="w-3 h-3 mr-1" />
