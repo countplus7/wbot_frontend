@@ -68,11 +68,17 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
 
       const response = await api.get(`/google/auth/${businessId}`);
       if (response.success && response.authUrl) {
-        // Open Google OAuth in a new window
+        // Calculate center position for popup window
+        const width = 500;
+        const height = 600;
+        const left = (screen.width - width) / 2;
+        const top = (screen.height - height) / 2;
+
+        // Open Google OAuth in a centered popup window
         const authWindow = window.open(
           response.authUrl,
           "google-auth",
-          "width=500,height=600,scrollbars=yes,resizable=yes"
+          `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes,centerscreen=yes`
         );
 
         // Multiple fallback methods for detecting OAuth completion
