@@ -27,31 +27,36 @@ function App() {
           <div className="min-h-screen bg-background">
             <Routes>
               {/* Public routes */}
-              <Route 
-                path="/auth" 
+              <Route
+                path="/auth"
                 element={
                   <AuthGuard requireAuth={false}>
                     <AuthPage />
                   </AuthGuard>
-                } 
+                }
               />
-              
+
               {/* Protected routes */}
-              <Route 
-                path="/businesses" 
+              <Route
+                path="/businesses"
                 element={
                   <AuthGuard requireAuth={true}>
-                    <Header />
-                    <div className="container mx-auto py-6 px-4">
-                      <Index />
+                    <div className="h-screen">
+                      {/* Main content */}
+                      <div className="w-full flex flex-col">
+                        <Header />
+                        <div className="w-full overflow-auto p-6">
+                          <Index />
+                        </div>
+                      </div>
                     </div>
                   </AuthGuard>
-                } 
+                }
               />
-              
+
               {/* Root redirect */}
               <Route path="/" element={<Navigate to="/businesses" replace />} />
-              
+
               {/* Catch all - redirect to businesses */}
               <Route path="*" element={<Navigate to="/businesses" replace />} />
             </Routes>
