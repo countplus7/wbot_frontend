@@ -31,7 +31,6 @@ export interface WhatsAppConfig {
   access_token: string;
   verify_token?: string;
   webhook_url?: string;
-
   created_at: string;
   updated_at: string;
 }
@@ -63,8 +62,8 @@ export interface GoogleWorkspaceIntegration {
 
 export interface GoogleIntegrationStatus {
   isIntegrated: boolean;
-  email?: string;
-  lastUpdated?: string;
+  email?: string | null;
+  lastUpdated?: string | null;
 }
 
 // Chat History Types
@@ -138,44 +137,39 @@ class ApiClient {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}`);
+        throw new Error(`HTTP ${response.status}`);
       }
-
       return data;
     } catch (error) {
-      console.error("API request failed:", error);
+      console.error(`API request failed: ${endpoint}`, error);
       throw error;
     }
   }
 
-  // GET request
   async get<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { method: "GET" });
   }
 
-  // POST request
-  async post<T>(endpoint: string, data: unknown): Promise<ApiResponse<T>> {
+  async post<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  // PUT request
-  async put<T>(endpoint: string, data: unknown): Promise<ApiResponse<T>> {
+  async put<T>(endpoint: string, data?: unknown): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  // DELETE request
   async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
     return this.request<T>(endpoint, { method: "DELETE" });
   }
 }
 
-// Simple API object for Google integration
+// Legacy API object for backward compatibility
 export const api = {
   get: async (endpoint: string) => {
     const url = `${API_CONFIG.API_BASE}${endpoint}`;
