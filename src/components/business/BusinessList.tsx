@@ -144,8 +144,9 @@ export const BusinessList: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="text-start">
           <h1 className="text-3xl font-bold">Business Management</h1>
-          <p className="text-muted-foreground">Manage all businesses, WhatsApp configurations, and AI tones.</p>
-          <p className="text-muted-foreground">Monitor and review chat histories across all businesses.</p>
+          <p className="text-muted-foreground">
+            Manage all Businesses, WhatsApp configurations, AI tones and External System Integrations.
+          </p>
         </div>
         <Button onClick={handleCreateBusiness} className="bg-primary hover:bg-primary/90">
           <Plus className="w-4 h-4 mr-2" />
@@ -183,21 +184,22 @@ export const BusinessList: React.FC = () => {
       ) : (
         <div className="space-y-4">
           {filteredBusinesses.map((business) => (
-            <Card key={business.id} className="hover:shadow-lg transition-shadow">
+            <Card key={business.id} className="hover:shadow-lg transition-shadow relative">
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{business.name}</CardTitle>
+                <div className="flex items-center">
+                  <CardTitle className="text-lg mr-2">{business.name}</CardTitle>
                   <Badge variant={business.status === "active" ? "default" : "secondary"}>{business.status}</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <CardDescription className="text-start">{business.description}</CardDescription>
-                  <div className="text-sm text-end text-muted-foreground">
+                  {/* <div className="text-sm text-end text-muted-foreground">
                     Created: {new Date(business.created_at).toLocaleDateString()}
-                  </div>
+                  </div> */}
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-wrap gap-2">
+                <p className="text-start">Basic Configuration</p>
+                <div className="mt-2 flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={() => handleEditBusiness(business)}>
                     <Edit className="w-3 h-3 mr-1" />
                     Edit
@@ -210,19 +212,23 @@ export const BusinessList: React.FC = () => {
                     <MessageSquare className="w-3 h-3 mr-1" />
                     Tone
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleGoogleConfig(business)}>
-                    <div className="w-3 h-3 mr-1 bg-blue-600 rounded-sm flex items-center justify-center">
-                      <span className="text-white font-bold text-[8px]">G</span>
-                    </div>
-                    Google
-                  </Button>
                   <Button size="sm" variant="outline" onClick={() => handleChatHistory(business)}>
                     <History className="w-3 h-3 mr-1" />
                     Chat History
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDeleteBusiness(business)}>
-                    <Trash2 className="w-3 h-3 mr-1" />
-                    Delete
+                </div>
+                <p className="mt-5 text-start">External System Configuration</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => handleGoogleConfig(business)}>
+                    <div className="w-4 h-4 mr-1 bg-blue-600 rounded-sm flex items-center justify-center">
+                      <span className="text-white font-bold text-[10px]">G</span>
+                    </div>
+                    Google
+                  </Button>
+                </div>
+                <div className="absolute right-2 top-2">
+                  <Button variant="destructive" className="w-8 h-8" onClick={() => handleDeleteBusiness(business)}>
+                    <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
               </CardContent>

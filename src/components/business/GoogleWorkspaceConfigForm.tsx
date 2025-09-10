@@ -45,8 +45,8 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
       setError(null);
       const response = await api.get(`/google/status/${businessId}`);
 
-      if (response.data && typeof response.data === "object") {
-        setIntegrationStatus(response.data);
+      if (response && typeof response === "object") {
+        setIntegrationStatus(response);
       } else {
         // Fallback if response.data is not in expected format
         setIntegrationStatus({ isIntegrated: false });
@@ -67,36 +67,78 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
       setError(null);
 
       const response = await api.get(`/google/auth/${businessId}`);
-      if (response.data.success && response.data.authUrl) {
+      if (response.success && response.authUrl) {
         // Open Google OAuth in a new window
         const authWindow = window.open(
-          response.data.authUrl,
+          response.authUrl,
           "google-auth",
           "width=500,height=600,scrollbars=yes,resizable=yes"
         );
 
-        // Poll for authentication completion
+        // Multiple fallback methods for detecting OAuth completion
+        let authCompleted = false;
+
+        // Listen for messages from the popup window
+        const messageListener = (event: MessageEvent) => {
+          console.log("Message received:", event.data);
+          if (event.data && event.data.type === "GOOGLE_AUTH_SUCCESS") {
+            console.log("OAuth success via message");
+            authCompleted = true;
+            clearInterval(pollAuth);
+            window.removeEventListener("message", messageListener);
+            if (authWindow && !authWindow.closed) {
+              authWindow.close();
+            }
+            setTimeout(() => {
+              fetchIntegrationStatus();
+              onSuccess?.();
+            }, 500);
+          } else if (event.data && event.data.type === "GOOGLE_AUTH_ERROR") {
+            console.log("OAuth error via message");
+            authCompleted = true;
+            clearInterval(pollAuth);
+            window.removeEventListener("message", messageListener);
+            if (authWindow && !authWindow.closed) {
+              authWindow.close();
+            }
+            setError("Google authentication failed");
+          }
+        };
+
+        window.addEventListener("message", messageListener);
+
+        // Polling for authentication completion (fallback)
         const pollAuth = setInterval(() => {
           try {
-            if (authWindow?.closed) {
+            if (authWindow?.closed && !authCompleted) {
+              console.log("Popup closed, checking for success");
               clearInterval(pollAuth);
-              // Check for success in URL parameters (callback might have updated the parent)
+              window.removeEventListener("message", messageListener);
+
+              // Check URL parameters
               const urlParams = new URLSearchParams(window.location.search);
               if (urlParams.get("google_auth") === "success") {
+                console.log("OAuth success via URL parameters");
                 fetchIntegrationStatus();
                 onSuccess?.();
-                // Clean up URL parameters
                 window.history.replaceState({}, document.title, window.location.pathname);
+              } else {
+                // Force refresh integration status
+                console.log("Forcing integration status refresh");
+                setTimeout(() => {
+                  fetchIntegrationStatus();
+                }, 1000);
               }
             }
           } catch (e) {
-            // Cross-origin error, continue polling
+            // Continue polling
           }
         }, 1000);
 
         // Clean up after 5 minutes
         setTimeout(() => {
           clearInterval(pollAuth);
+          window.removeEventListener("message", messageListener);
           if (authWindow && !authWindow.closed) {
             authWindow.close();
           }
@@ -117,10 +159,10 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
       setLoading(true);
       setError(null);
 
-      const response = await api.delete(`/google/remove/${businessId}`);
-      if (response.data.success) {
+      const response = await api.delete(`/google/integration/${businessId}`);
+      if (response && typeof response === "object") {
         setIntegrationStatus({ isIntegrated: false });
-        onSuccess?.();
+        // onSuccess?.();
       } else {
         setError("Failed to remove Google integration");
       }
@@ -230,11 +272,6 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
               </Button>
 
               <div className="flex gap-2">
-                {onCancel && (
-                  <Button variant="outline" onClick={onCancel}>
-                    Close
-                  </Button>
-                )}
                 <Button onClick={handleGoogleAuth} disabled={loading} className="flex items-center gap-2">
                   <ExternalLink className="h-4 w-4" />
                   Reconnect
@@ -299,14 +336,6 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
                   <p className="text-xs text-gray-600">File management</p>
                 </div>
               </div>
-            </div>
-
-            <div className="flex justify-end">
-              {onCancel && (
-                <Button variant="outline" onClick={onCancel}>
-                  Cancel
-                </Button>
-              )}
             </div>
           </div>
         ) : null}
