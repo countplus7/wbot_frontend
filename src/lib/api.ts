@@ -1,4 +1,4 @@
-import { API_CONFIG } from "../config/environment";
+import { API_CONFIG } from "../config/index";
 
 // API Response Types
 export interface ApiResponse<T = unknown> {
