@@ -51,12 +51,12 @@ export interface ConversationWithMessages {
 export class BusinessService {
   // Business Management
   async getBusinesses(): Promise<Business[]> {
-    const response = await apiClient.get<Business[]>("/businesses");
+    const response = await apiClient.get<Business[]>("/basic/businesses");
     return response.data;
   }
 
   async getBusiness(id: number): Promise<BusinessWithConfigAndTones> {
-    const response = await apiClient.get<BusinessWithConfigAndTones>(`/businesses/${id}`);
+    const response = await apiClient.get<BusinessWithConfigAndTones>(`/basic/businesses/${id}`);
     return response.data;
   }
 
@@ -65,7 +65,7 @@ export class BusinessService {
     description?: string;
     status?: "active" | "inactive";
   }): Promise<Business> {
-    const response = await apiClient.post<Business>("/businesses", businessData);
+    const response = await apiClient.post<Business>("/basic/businesses", businessData);
     return response.data;
   }
 
@@ -77,19 +77,19 @@ export class BusinessService {
       status?: "active" | "inactive";
     }
   ): Promise<Business> {
-    const response = await apiClient.put<Business>(`/businesses/${id}`, businessData);
+    const response = await apiClient.put<Business>(`/basic/businesses/${id}`, businessData);
     return response.data;
   }
 
   async deleteBusiness(id: number): Promise<string> {
-    const response = await apiClient.delete<{ message: string }>(`/businesses/${id}`);
+    const response = await apiClient.delete<{ message: string }>(`/basic/businesses/${id}`);
     return response.message;
   }
 
   // WhatsApp Configuration Management
   async getWhatsAppConfig(businessId: number): Promise<WhatsAppConfig | null> {
     try {
-      const response = await apiClient.get<WhatsAppConfig>(`/businesses/${businessId}/whatsapp-config`);
+      const response = await apiClient.get<WhatsAppConfig>(`/basic/businesses/${businessId}/whatsapp-config`);
       return response.data ?? null;
     } catch (error) {
       return null;
@@ -105,7 +105,7 @@ export class BusinessService {
       webhook_url?: string;
     }
   ): Promise<WhatsAppConfig> {
-    const response = await apiClient.post<WhatsAppConfig>(`/businesses/${businessId}/whatsapp-config`, configData);
+    const response = await apiClient.post<WhatsAppConfig>(`/basic/businesses/${businessId}/whatsapp-config`, configData);
     return response.data;
   }
 
@@ -118,18 +118,18 @@ export class BusinessService {
       webhook_url?: string;
     }
   ): Promise<WhatsAppConfig> {
-    const response = await apiClient.put<WhatsAppConfig>(`/whatsapp-config/${id}`, configData);
+    const response = await apiClient.put<WhatsAppConfig>(`/basic/whatsapp-config/${id}`, configData);
     return response.data;
   }
 
   async deleteWhatsAppConfig(id: number): Promise<string> {
-    const response = await apiClient.delete<{ message: string }>(`/whatsapp-config/${id}`);
+    const response = await apiClient.delete<{ message: string }>(`/basic/whatsapp-config/${id}`);
     return response.message;
   }
 
   // Business Tone Management (Single tone per business)
   async getBusinessTone(businessId: number): Promise<BusinessTone | null> {
-    const response = await apiClient.get<BusinessTone>(`/businesses/${businessId}/tone`);
+    const response = await apiClient.get<BusinessTone>(`/basic/businesses/${businessId}/tone`);
     return response.data;
   }
 
@@ -141,7 +141,7 @@ export class BusinessService {
       tone_instructions: string;
     }
   ): Promise<BusinessTone> {
-    const response = await apiClient.post<BusinessTone>(`/businesses/${businessId}/tone`, toneData);
+    const response = await apiClient.post<BusinessTone>(`/basic/businesses/${businessId}/tone`, toneData);
     return response.data;
   }
 
@@ -154,18 +154,18 @@ export class BusinessService {
       business_id: number;
     }
   ): Promise<BusinessTone> {
-    const response = await apiClient.put<BusinessTone>(`/tones/${id}`, toneData);
+    const response = await apiClient.put<BusinessTone>(`/basic/tones/${id}`, toneData);
     return response.data;
   }
 
   async deleteBusinessTone(id: number): Promise<BusinessTone> {
-    const response = await apiClient.delete<BusinessTone>(`/tones/${id}`);
+    const response = await apiClient.delete<BusinessTone>(`/basic/tones/${id}`);
     return response.data;
   }
 
   // Chat History Management
   async getBusinessConversations(businessId: number): Promise<Conversation[]> {
-    const response = await apiClient.get<Conversation[]>(`/businesses/${businessId}/conversations`);
+    const response = await apiClient.get<Conversation[]>(`/basic/businesses/${businessId}/conversations`);
     return response.data;
   }
 
@@ -175,14 +175,14 @@ export class BusinessService {
     offset: number = 0
   ): Promise<ConversationWithMessages> {
     const response = await apiClient.get<ConversationWithMessages>(
-      `/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`
+      `/basic/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`
     );
     return response.data;
   }
 
   // Delete a conversation
   async deleteConversation(conversationId: number): Promise<ConversationDetails> {
-    const response = await apiClient.delete<ConversationDetails>(`/conversations/${conversationId}`);
+    const response = await apiClient.delete<ConversationDetails>(`/basic/conversations/${conversationId}`);
     return response.data;
   }
 }
