@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useCreateBusiness, useUpdateBusiness } from "@/hooks/useBusinesses";
-import type { Business } from "@/lib/api";
+import { useCreateBusiness, useUpdateBusiness } from "@/hooks/use-businesses";
+import type { Business } from "@/lib/services/business-service";
 
 const businessSchema = z.object({
   name: z.string().min(1, "Business name is required").max(100, "Business name cannot exceed 100 characters"),

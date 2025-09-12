@@ -14,12 +14,13 @@ import {
   FileSpreadsheet,
   HardDrive,
 } from "lucide-react";
-import { api } from "@/lib/api";
+import { GoogleService, type GoogleWorkspaceConfig } from "@/lib/services/google-service";
 
 interface GoogleIntegrationStatus {
   isIntegrated: boolean;
   email?: string;
   lastUpdated?: string;
+  services?: Record<string, boolean>;
 }
 
 interface GoogleWorkspaceConfigFormProps {
@@ -38,24 +39,38 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [config, setConfig] = useState<GoogleWorkspaceConfig | null>(null);
 
   const fetchIntegrationStatus = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get(`/google/status/${businessId}`);
-
-      if (response && typeof response === "object") {
-        setIntegrationStatus(response);
+      
+      // Get configuration
+      const configResponse = await GoogleService.getGoogleConfig(businessId);
+      
+      if (configResponse.success && configResponse.data) {
+        setConfig(configResponse.data);
+        setIntegrationStatus({
+          isIntegrated: configResponse.data.status === 'active',
+          email: configResponse.data.client_id, // Using client_id as identifier
+          lastUpdated: configResponse.data.last_sync,
+          services: {
+            gmail: true,
+            calendar: true,
+            drive: true,
+            sheets: true,
+          }
+        });
       } else {
-        // Fallback if response.data is not in expected format
         setIntegrationStatus({ isIntegrated: false });
+        setConfig(null);
       }
     } catch (err) {
       console.error("Error fetching integration status:", err);
       setError("Failed to fetch integration status");
-      // Set fallback status on error
       setIntegrationStatus({ isIntegrated: false });
+      setConfig(null);
     } finally {
       setLoading(false);
     }
@@ -66,95 +81,43 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
       setLoading(true);
       setError(null);
 
-      const response = await api.get(`/google/auth/${businessId}`);
-      if (response.success && response.authUrl) {
-        // Calculate center position for popup window
-        const width = 500;
-        const height = 600;
-        const left = (screen.width - width) / 2;
-        const top = (screen.height - height) / 2;
-
-        // Open Google OAuth in a centered popup window
-        const authWindow = window.open(
-          response.authUrl,
-          "google-auth",
-          `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes,centerscreen=yes`
-        );
-
-        // Multiple fallback methods for detecting OAuth completion
-        let authCompleted = false;
-
-        // Listen for messages from the popup window
-        const messageListener = (event: MessageEvent) => {
-          console.log("Message received:", event.data);
-          if (event.data && event.data.type === "GOOGLE_AUTH_SUCCESS") {
-            console.log("OAuth success via message");
-            authCompleted = true;
-            clearInterval(pollAuth);
-            window.removeEventListener("message", messageListener);
-            if (authWindow && !authWindow.closed) {
-              authWindow.close();
-            }
-            setTimeout(() => {
-              fetchIntegrationStatus();
-              onSuccess?.();
-            }, 500);
-          } else if (event.data && event.data.type === "GOOGLE_AUTH_ERROR") {
-            console.log("OAuth error via message");
-            authCompleted = true;
-            clearInterval(pollAuth);
-            window.removeEventListener("message", messageListener);
-            if (authWindow && !authWindow.closed) {
-              authWindow.close();
-            }
-            setError("Google authentication failed");
-          }
-        };
-
-        window.addEventListener("message", messageListener);
-
-        // Polling for authentication completion (fallback)
-        const pollAuth = setInterval(() => {
-          try {
-            if (authWindow?.closed && !authCompleted) {
-              console.log("Popup closed, checking for success");
-              clearInterval(pollAuth);
-              window.removeEventListener("message", messageListener);
-
-              // Check URL parameters
-              const urlParams = new URLSearchParams(window.location.search);
-              if (urlParams.get("google_auth") === "success") {
-                console.log("OAuth success via URL parameters");
-                fetchIntegrationStatus();
-                onSuccess?.();
-                window.history.replaceState({}, document.title, window.location.pathname);
-              } else {
-                // Force refresh integration status
-                console.log("Forcing integration status refresh");
-                setTimeout(() => {
-                  fetchIntegrationStatus();
-                }, 1000);
-              }
-            }
-          } catch (e) {
-            // Continue polling
-          }
-        }, 1000);
-
-        // Clean up after 5 minutes
-        setTimeout(() => {
-          clearInterval(pollAuth);
-          window.removeEventListener("message", messageListener);
-          if (authWindow && !authWindow.closed) {
-            authWindow.close();
-          }
-        }, 300000);
-      } else {
-        setError("Failed to initiate Google authentication");
-      }
+      // For now, we'll show a message that manual configuration is required
+      // In a real implementation, this would redirect to Google OAuth
+      setError("Google OAuth integration requires manual configuration. Please contact your administrator.");
+      
     } catch (err) {
       console.error("Error initiating Google auth:", err);
       setError("Failed to initiate Google authentication");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestConnection = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Test connection
+      const response = await GoogleService.testGoogleConnection(businessId);
+      
+      if (response.success && response.data) {
+        setIntegrationStatus(prev => ({
+          ...prev,
+          services: response.data.services,
+        }));
+        
+        if (response.data.status === 'connected') {
+          setError(null);
+        } else {
+          setError("Connection test failed: " + response.data.status);
+        }
+      } else {
+        setError("Failed to test Google connection");
+      }
+    } catch (err) {
+      console.error("Error testing Google connection:", err);
+      setError("Failed to test Google connection");
     } finally {
       setLoading(false);
     }
@@ -165,10 +128,13 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
       setLoading(true);
       setError(null);
 
-      const response = await api.delete(`/google/integration/${businessId}`);
-      if (response && typeof response === "object") {
+      // Delete configuration
+      const response = await GoogleService.deleteGoogleConfig(businessId);
+      
+      if (response.success) {
         setIntegrationStatus({ isIntegrated: false });
-        // onSuccess?.();
+        setConfig(null);
+        onSuccess?.();
       } else {
         setError("Failed to remove Google integration");
       }
@@ -180,172 +146,162 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
     }
   };
 
-  const formatDate = (dateString: string) => {
-    try {
-      return new Date(dateString).toLocaleDateString();
-    } catch {
-      return dateString;
-    }
-  };
-
   useEffect(() => {
     if (businessId) {
       fetchIntegrationStatus();
     }
   }, [businessId]);
 
+  const renderIntegrationStatus = () => {
+    if (loading) {
+      return (
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <span className="text-sm text-muted-foreground">Checking integration status...</span>
+        </div>
+      );
+    }
+
+    if (integrationStatus.isIntegrated) {
+      return (
+        <div className="flex items-center space-x-2">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <span className="text-sm text-green-600 font-medium">Connected</span>
+          {integrationStatus.email && (
+            <span className="text-sm text-muted-foreground">({integrationStatus.email})</span>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center space-x-2">
+        <AlertCircle className="h-4 w-4 text-orange-600" />
+        <span className="text-sm text-orange-600 font-medium">Not Connected</span>
+      </div>
+    );
+  };
+
+  const renderServiceStatus = (service: string, icon: React.ReactNode) => {
+    const isActive = integrationStatus.services?.[service] || false;
+    
+    return (
+      <div className="flex items-center space-x-2">
+        {icon}
+        <span className="text-sm">{service.charAt(0).toUpperCase() + service.slice(1)}</span>
+        <Badge variant={isActive ? "default" : "secondary"}>
+          {isActive ? "Active" : "Inactive"}
+        </Badge>
+      </div>
+    );
+  };
+
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">G</span>
-          </div>
-          Google Workspace Integration
-        </CardTitle>
-        <CardDescription>
-          Connect your business to Google Workspace services including Gmail, Calendar, Sheets, and Drive for seamless
-          automation.
-        </CardDescription>
-      </CardHeader>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <ExternalLink className="h-5 w-5" />
+            <span>Google Workspace Integration</span>
+          </CardTitle>
+          <CardDescription>
+            Connect your Google Workspace account to enable Gmail, Calendar, Drive, and Sheets integration.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      <CardContent className="space-y-6">
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="text-muted-foreground">Loading integration status...</div>
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-medium">Integration Status</h4>
+              {renderIntegrationStatus()}
+            </div>
+            
+            <div className="flex space-x-2">
+              {integrationStatus.isIntegrated ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleTestConnection}
+                    disabled={loading}
+                  >
+                    Test Connection
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleRemoveIntegration}
+                    disabled={loading}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Remove
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleGoogleAuth}
+                  disabled={loading}
+                  size="sm"
+                >
+                  <ExternalLink className="h-4 w-4 mr-1" />
+                  Connect Google
+                </Button>
+              )}
+            </div>
           </div>
-        ) : integrationStatus && integrationStatus.isIntegrated ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium text-green-900">Connected to Google Workspace</p>
-                  <p className="text-sm text-green-700">
-                    Authenticated as: <span className="font-mono">{integrationStatus.email}</span>
-                  </p>
-                  {integrationStatus.lastUpdated && (
-                    <p className="text-xs text-green-600">Last updated: {formatDate(integrationStatus.lastUpdated)}</p>
+
+          {integrationStatus.isIntegrated && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="text-sm font-medium mb-3">Connected Services</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  {renderServiceStatus("gmail", <Mail className="h-4 w-4" />)}
+                  {renderServiceStatus("calendar", <Calendar className="h-4 w-4" />)}
+                  {renderServiceStatus("drive", <HardDrive className="h-4 w-4" />)}
+                  {renderServiceStatus("sheets", <FileSpreadsheet className="h-4 w-4" />)}
+                </div>
+              </div>
+            </>
+          )}
+
+          {config && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="text-sm font-medium mb-2">Configuration Details</h4>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p><strong>Status:</strong> {config.status}</p>
+                  <p><strong>Client ID:</strong> {config.client_id.substring(0, 20)}...</p>
+                  <p><strong>Scopes:</strong> {config.scopes.join(", ")}</p>
+                  {config.last_sync && (
+                    <p><strong>Last Sync:</strong> {new Date(config.last_sync).toLocaleString()}</p>
                   )}
                 </div>
               </div>
-            </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Mail className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="font-medium text-sm">Gmail</p>
-                  <p className="text-xs text-gray-600">Send & receive emails</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Calendar className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="font-medium text-sm">Calendar</p>
-                  <p className="text-xs text-gray-600">Manage events</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <FileSpreadsheet className="h-5 w-5 text-green-500" />
-                <div>
-                  <p className="font-medium text-sm">Sheets</p>
-                  <p className="text-xs text-gray-600">Read & write data</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <HardDrive className="h-5 w-5 text-yellow-500" />
-                <div>
-                  <p className="font-medium text-sm">Drive</p>
-                  <p className="text-xs text-gray-600">File management</p>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <Button variant="destructive" size="sm" onClick={handleRemoveIntegration} disabled={loading}>
-                <Trash2 className="h-4 w-4" />
-                Remove Integration
-              </Button>
-
-              <div className="flex gap-2">
-                <Button onClick={handleGoogleAuth} disabled={loading} className="flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  Reconnect
-                </Button>
-              </div>
-            </div>
-          </div>
-        ) : !integrationStatus || !integrationStatus.isIntegrated ? (
-          <div className="space-y-4">
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">G</span>
-                </div>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Connect to Google Workspace</h3>
-              <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                Authorize your business to access Google Workspace services. You'll be redirected to Google to grant
-                permissions.
-              </p>
-
-              <Button
-                onClick={handleGoogleAuth}
-                disabled={loading}
-                size="lg"
-                className="flex items-center gap-2 mx-auto"
-              >
-                <div className="w-5 h-5 bg-white rounded flex items-center justify-center">
-                  <span className="text-blue-600 font-bold text-xs">G</span>
-                </div>
-                {loading ? "Connecting..." : "Connect with Google"}
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Mail className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="font-medium text-sm">Gmail</p>
-                  <p className="text-xs text-gray-600">Send & receive emails</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <Calendar className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="font-medium text-sm">Calendar</p>
-                  <p className="text-xs text-gray-600">Manage events</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <FileSpreadsheet className="h-5 w-5 text-green-500" />
-                <div>
-                  <p className="font-medium text-sm">Sheets</p>
-                  <p className="text-xs text-gray-600">Read & write data</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <HardDrive className="h-5 w-5 text-yellow-500" />
-                <div>
-                  <p className="font-medium text-sm">Drive</p>
-                  <p className="text-xs text-gray-600">File management</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </CardContent>
-    </Card>
+      <div className="flex justify-end space-x-2">
+        {onCancel && (
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+        )}
+        {onSuccess && integrationStatus.isIntegrated && (
+          <Button onClick={onSuccess}>
+            Continue
+          </Button>
+        )}
+      </div>
+    </div>
   );
 };

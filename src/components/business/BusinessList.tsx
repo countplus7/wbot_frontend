@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useBusinesses, useDeleteBusiness } from "@/hooks/useBusinesses";
+import { useBusinesses, useDeleteBusiness } from "@/hooks/use-businesses";
 import { BusinessForm } from "./BusinessForm";
 import { WhatsAppConfigForm } from "./WhatsAppConfigForm";
 import { BusinessToneForm } from "./BusinessToneForm";
@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Business } from "@/lib/api";
+import type { Business } from "@/lib/services/business-service";
 
 type FormType = "business" | "whatsapp" | "tone" | "chat-history" | "google" | null;
 

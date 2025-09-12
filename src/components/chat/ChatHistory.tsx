@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageSquare, Phone, Calendar, User, Bot, Download, Play, Pause, ImageIcon, Trash2 } from "lucide-react";
-import { useBusinessConversations, useConversationMessages, useDeleteConversation } from "@/hooks/useBusinesses";
+import { useConversations } from "@/hooks/use-businesses";
+import { BusinessService } from "@/lib/services/business-service";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import type { Conversation, Message } from "@/lib/api";
+import type { Conversation, Message } from "@/lib/services/business-service";
 
 interface ChatHistoryProps {
   businessId: number;
@@ -36,13 +37,9 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   const [conversationToDelete, setConversationToDelete] = useState<Conversation | null>(null);
 
-  const { data: conversations = [], isLoading: conversationsLoading } = useBusinessConversations(businessId);
-  const { data: conversationData, isLoading: messagesLoading } = useConversationMessages(
-    selectedConversationId || 0,
-    100, // Load more messages
-    0
-  );
-  const deleteConversation = useDeleteConversation();
+  const { data: conversationsData, isLoading: conversationsLoading } = useConversations(businessId);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
@@ -101,20 +98,42 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
     setImageErrors((prev) => new Set(prev).add(messageId));
   };
 
-  const handleDeleteConversation = (conversation: Conversation, e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent conversation selection
-    setConversationToDelete(conversation);
+  const handleDeleteConversation = async () => {
+    if (!conversationToDelete) return;
+    
+    try {
+      // Using archiveConversation as alternative to non-existent deleteConversation
+      const response = await BusinessService.archiveConversation(conversationToDelete.id);
+      if (response.success) {
+        window.location.reload(); // Simple refresh for now
+      }
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+    } finally {
+      setConversationToDelete(null);
+    }
   };
 
   const confirmDeleteConversation = async () => {
     if (conversationToDelete) {
-      await deleteConversation.mutateAsync(conversationToDelete.id);
-      setConversationToDelete(null);
+      await handleDeleteConversation();
+    }
+  };
 
-      // If the deleted conversation was selected, clear the selection
-      if (selectedConversationId === conversationToDelete.id) {
-        setSelectedConversationId(null);
+  const loadConversationMessages = async (conversationId: number) => {
+    try {
+      setMessagesLoading(true);
+      const response = await BusinessService.getConversationMessages(conversationId, { limit: 100 });
+      if (response.success && response.data) {
+        setMessages(response.data.messages);
+      } else {
+        setMessages([]);
       }
+    } catch (error) {
+      console.error("Error loading conversation messages:", error);
+      setMessages([]);
+    } finally {
+      setMessagesLoading(false);
     }
   };
 
@@ -208,17 +227,20 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
             <ScrollArea className="h-[calc(100vh-200px)]">
               {conversationsLoading ? (
                 <div className="p-4 text-center text-muted-foreground">Loading conversations...</div>
-              ) : conversations.length === 0 ? (
+              ) : conversationsData?.conversations?.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground">No conversations found</div>
               ) : (
                 <div className="space-y-1">
-                  {conversations.map((conversation) => (
+                  {conversationsData?.conversations?.map((conversation) => (
                     <div
                       key={conversation.id}
                       className={`p-4 cursor-pointer hover:bg-muted/50 transition-colors ${
                         selectedConversationId === conversation.id ? "bg-muted" : ""
                       }`}
-                      onClick={() => setSelectedConversationId(conversation.id)}
+                      onClick={() => {
+                        setSelectedConversationId(conversation.id);
+                        loadConversationMessages(conversation.id);
+                      }}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -232,7 +254,10 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={(e) => handleDeleteConversation(conversation, e)}
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent conversation selection
+                              setConversationToDelete(conversation);
+                            }}
                             className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -280,15 +305,15 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
                 </div>
               ) : messagesLoading ? (
                 <div className="p-4 text-center text-muted-foreground">Loading messages...</div>
-              ) : !conversationData?.messages || conversationData.messages.length === 0 ? (
+              ) : !messages || messages.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground">No messages found in this conversation</div>
               ) : (
                 <div className="space-y-4 p-4 pb-8">
-                  {conversationData.messages.map((message, index) => (
+                  {messages.map((message, index) => (
                     <div
                       key={message.id}
                       className={`flex gap-3 ${message.direction === "inbound" ? "justify-start" : "justify-end"} ${
-                        index === conversationData.messages.length - 1 ? "pb-8" : ""
+                        index === messages.length - 1 ? "pb-8" : ""
                       }`}
                     >
                       <div
@@ -331,9 +356,9 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
             <AlertDialogAction
               onClick={confirmDeleteConversation}
               className="bg-destructive text-destructive-foreground"
-              disabled={deleteConversation.isPending}
+              disabled={false} // No pending state for this simplified delete
             >
-              {deleteConversation.isPending ? "Deleting..." : "Delete"}
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

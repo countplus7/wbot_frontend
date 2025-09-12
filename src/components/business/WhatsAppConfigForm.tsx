@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useWhatsAppConfig, useCreateWhatsAppConfig, useUpdateWhatsAppConfig } from '@/hooks/useBusinesses';
-import type { WhatsAppConfig } from '@/lib/api';
+import { useWhatsAppConfig, useCreateWhatsAppConfig, useUpdateWhatsAppConfig } from '@/hooks/use-businesses';
+import type { WhatsAppConfig } from '@/lib/services/business-service';
 
 const whatsappConfigSchema = z.object({
   phone_number_id: z.string().min(1, 'Phone number ID is required'),
@@ -59,7 +59,7 @@ export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({
     try {
       if (existingConfig) {
         await updateConfig.mutateAsync({
-          id: existingConfig.id,
+          businessId,
           data: {
             phone_number_id: data.phone_number_id,
             access_token: data.access_token,

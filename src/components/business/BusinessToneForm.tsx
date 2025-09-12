@@ -6,15 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useCreateBusinessTone, useUpdateBusinessTone, useBusinessTone } from "@/hooks/useBusinesses";
+import { useCreateBusinessTone, useUpdateBusinessTone } from "@/hooks/use-businesses";
+import type { BusinessTone } from "@/lib/services/business-service";
 
 const businessToneSchema = z.object({
-  name: z.string().min(1, "Tone name is required").max(50, "Tone name cannot exceed 50 characters"),
-  description: z.string().max(200, "Description cannot exceed 200 characters").optional(),
+  tone_name: z.string().min(1, "Tone name is required").max(50, "Tone name cannot exceed 50 characters"),
   tone_instructions: z
     .string()
     .min(1, "Tone instructions are required")
     .max(1000, "Tone instructions cannot exceed 1000 characters"),
+  is_default: z.boolean().optional(),
 });
 
 type BusinessToneFormData = z.infer<typeof businessToneSchema>;
@@ -23,44 +24,54 @@ interface BusinessToneFormProps {
   businessId: number;
   onSuccess: () => void;
   onCancel: () => void;
+  editingTone?: BusinessTone | null;
 }
 
-export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, onSuccess, onCancel }) => {
+export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ 
+  businessId, 
+  onSuccess, 
+  onCancel, 
+  editingTone 
+}) => {
   const createTone = useCreateBusinessTone();
   const updateTone = useUpdateBusinessTone();
-  const { data: existingTone } = useBusinessTone(businessId);
 
   const form = useForm<BusinessToneFormData>({
     resolver: zodResolver(businessToneSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      tone_name: "",
       tone_instructions: "",
+      is_default: false,
     },
   });
 
-  // Load existing tone data when available
+  // Load existing tone data when editing
   useEffect(() => {
-    if (existingTone) {
+    if (editingTone) {
       form.reset({
-        name: existingTone.name,
-        description: existingTone.description || "",
-        tone_instructions: existingTone.tone_instructions,
+        tone_name: editingTone.tone_name,
+        tone_instructions: editingTone.tone_instructions,
+        is_default: editingTone.is_default,
+      });
+    } else {
+      form.reset({
+        tone_name: "",
+        tone_instructions: "",
+        is_default: false,
       });
     }
-  }, [existingTone, form]);
+  }, [editingTone, form]);
 
   const onSubmit = async (data: BusinessToneFormData) => {
     try {
-      if (existingTone) {
+      if (editingTone) {
         // Update existing tone
         await updateTone.mutateAsync({
-          id: existingTone.id,
+          toneId: editingTone.id,
           data: {
-            name: data.name,
-            description: data.description || undefined,
+            tone_name: data.tone_name,
             tone_instructions: data.tone_instructions,
-            business_id: businessId,
+            is_default: data.is_default,
           },
         });
       } else {
@@ -68,15 +79,16 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
         await createTone.mutateAsync({
           businessId,
           data: {
-            name: data.name,
-            description: data.description || undefined,
+            tone_name: data.tone_name,
             tone_instructions: data.tone_instructions,
+            is_default: data.is_default,
           },
         });
       }
       onSuccess();
     } catch (error) {
       // Error handling is done in the mutation hooks
+      console.error("Error submitting business tone:", error);
     }
   };
 
@@ -87,7 +99,7 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="name"
+          name="tone_name"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tone Name *</FormLabel>
@@ -101,12 +113,16 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
 
         <FormField
           control={form.control}
-          name="description"
+          name="tone_instructions"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
+              <FormLabel>Tone Instructions *</FormLabel>
               <FormControl>
-                <Textarea placeholder="Enter tone description" {...field} rows={3} />
+                <Textarea 
+                  placeholder="Enter detailed tone instructions for the AI assistant" 
+                  {...field} 
+                  rows={6} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -115,14 +131,23 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
 
         <FormField
           control={form.control}
-          name="tone_instructions"
+          name="is_default"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tone Instructions *</FormLabel>
+            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
               <FormControl>
-                <Textarea placeholder="Enter tone instructions" {...field} rows={4} />
+                <input
+                  type="checkbox"
+                  checked={field.value || false}
+                  onChange={field.onChange}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
               </FormControl>
-              <FormMessage />
+              <div className="space-y-1 leading-none">
+                <FormLabel>Set as default tone</FormLabel>
+                <p className="text-sm text-muted-foreground">
+                  This tone will be used by default for new conversations
+                </p>
+              </div>
             </FormItem>
           )}
         />
@@ -133,7 +158,7 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
           </Button>
 
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Saving..." : existingTone ? "Update Tone" : "Create Tone"}
+            {isLoading ? "Saving..." : editingTone ? "Update Tone" : "Create Tone"}
           </Button>
         </div>
       </form>
