@@ -264,10 +264,20 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
                 </div>
 
                 <div className="flex gap-2">
-                  <Button onClick={handleTestConnection} disabled={loading} variant="outline" size="sm">
-                    {loading ? "Testing..." : "Test Connection"}
+                  <Button
+                    onClick={handleGoogleAuth}
+                    disabled={loading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {loading ? "Reconnecting..." : "Reconnect"}
                   </Button>
-                  <Button onClick={handleRemoveIntegration} disabled={loading} variant="destructive" size="sm">
+                  <Button
+                    onClick={handleRemoveIntegration}
+                    disabled={loading}
+                    variant="destructive"
+                    size="sm"
+                  >
                     {loading ? "Removing..." : "Remove Integration"}
                   </Button>
                 </div>
