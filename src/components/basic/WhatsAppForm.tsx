@@ -14,20 +14,20 @@ const whatsappConfigSchema = z.object({
   webhook_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
-type WhatsAppConfigFormData = z.infer<typeof whatsappConfigSchema>;
+type WhatsAppFormData = z.infer<typeof whatsappConfigSchema>;
 
-interface WhatsAppConfigFormProps {
+interface WhatsAppFormProps {
   businessId: number;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({ businessId, onSuccess, onCancel }) => {
+export const WhatsAppForm: React.FC<WhatsAppFormProps> = ({ businessId, onSuccess, onCancel }) => {
   const { data: existingConfig } = useWhatsAppConfig(businessId);
   const createConfig = useCreateWhatsAppConfig();
   const updateConfig = useUpdateWhatsAppConfig();
 
-  const form = useForm<WhatsAppConfigFormData>({
+  const form = useForm<WhatsAppFormData>({
     resolver: zodResolver(whatsappConfigSchema),
     defaultValues: {
       phone_number_id: "",
@@ -48,7 +48,7 @@ export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({ business
     }
   }, [existingConfig, form]);
 
-  const onSubmit = async (data: WhatsAppConfigFormData) => {
+  const onSubmit = async (data: WhatsAppFormData) => {
     try {
       if (isEditing) {
         await updateConfig.mutateAsync({

@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useBusinesses, useDeleteBusiness, useBusinessTones } from "@/hooks/use-businesses";
 import { BusinessForm } from "./BusinessForm";
-import { WhatsAppConfigForm } from "./WhatsAppConfigForm";
+import { WhatsAppForm } from "./WhatsAppForm";
 import { BusinessToneForm } from "./BusinessToneForm";
-import { GoogleWorkspaceConfigForm } from "./GoogleWorkspaceConfigForm";
+import { GoogleWorkspaceForm } from "../integration/GoogleWorkspaceForm";
 import { ChatHistory } from "../chat/ChatHistory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -37,7 +37,7 @@ export const BusinessList: React.FC = () => {
 
   // Only call the hook when tone modal is opened
   const { data: existingTones = [], isLoading: tonesLoading } = useBusinessTones(
-    formType === "tone" ? (selectedBusiness?.id || 0) : 0
+    formType === "tone" ? selectedBusiness?.id || 0 : 0
   );
 
   // Add debug logging
@@ -116,22 +116,12 @@ export const BusinessList: React.FC = () => {
       case "business":
         return <BusinessForm business={selectedBusiness} onSuccess={closeForm} onCancel={closeForm} />;
       case "whatsapp":
-        return <WhatsAppConfigForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
+        return <WhatsAppForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
       case "tone":
-        return (
-          <BusinessToneForm
-            businessId={selectedBusiness?.id || 0}
-            onSuccess={closeForm}
-            onCancel={closeForm}
-          />
-        );
+        return <BusinessToneForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
       case "google":
         return (
-          <GoogleWorkspaceConfigForm
-            businessId={selectedBusiness?.id || 0}
-            onSuccess={closeForm}
-            onCancel={closeForm}
-          />
+          <GoogleWorkspaceForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />
         );
       default:
         return null;

@@ -16,12 +16,12 @@ import {
 import { AlertCircle, User, Mail, Lock, Save, Settings } from "lucide-react";
 
 interface ProfileSettingsDialogProps {
-  children: React.ReactNode;
+  open: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ children }) => {
+export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ open, onOpenChange }) => {
   const { user, token, updateUser } = useAuth();
-  const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     username: user?.username || "",
     email: user?.email || "",
@@ -133,7 +133,9 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
   };
 
   const handleOpenChange = (newOpen: boolean) => {
-    setOpen(newOpen);
+    if (onOpenChange) {
+      onOpenChange(newOpen);
+    }
     if (!newOpen) {
       // Reset form when dialog closes
       setError(null);
@@ -149,7 +151,6 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -249,7 +250,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange?.(false)} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading} className="flex items-center gap-2">

@@ -1,5 +1,5 @@
 import React from "react";
-import { BusinessList } from "../components/business/BusinessList";
+import { BusinessList } from "../components/basic/BusinessList";
 
 const Index = () => {
   return <BusinessList />;

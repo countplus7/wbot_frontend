@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, Settings } from "lucide-react";
@@ -14,6 +14,8 @@ import { ProfileSettingsDialog } from "./ProfileSettingsDialog";
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -37,7 +39,7 @@ export const Header: React.FC = () => {
           <div className="flex items-center space-x-4">
             {/* User Menu */}
             {user && (
-              <DropdownMenu>
+              <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2 px-3">
                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -58,12 +60,16 @@ export const Header: React.FC = () => {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
 
-                  <ProfileSettingsDialog>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Profile Settings
-                    </DropdownMenuItem>
-                  </ProfileSettingsDialog>
+                  <button
+                    className="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      setProfileDialogOpen(true);
+                    }}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Profile Settings
+                  </button>
 
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="text-red-600">
@@ -76,6 +82,7 @@ export const Header: React.FC = () => {
           </div>
         </div>
       </div>
+      <ProfileSettingsDialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen} />
     </header>
   );
 };

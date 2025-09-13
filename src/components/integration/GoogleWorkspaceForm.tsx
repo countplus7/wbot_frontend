@@ -24,17 +24,13 @@ interface GoogleIntegrationStatus {
   lastUpdated: string;
 }
 
-interface GoogleWorkspaceConfigFormProps {
+interface GoogleWorkspaceFormProps {
   businessId: number;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps> = ({
-  businessId,
-  onSuccess,
-  onCancel,
-}) => {
+export const GoogleWorkspaceForm: React.FC<GoogleWorkspaceFormProps> = ({ businessId, onSuccess, onCancel }) => {
   const [integrationStatus, setIntegrationStatus] = useState<{
     isIntegrated: boolean;
     email?: string;
