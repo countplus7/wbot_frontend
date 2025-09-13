@@ -4,7 +4,7 @@ const isDevelopment = import.meta.env.DEV;
 const isProduction = import.meta.env.PROD;
 
 // Base URL from environment, with fallback
-const API_BASE = isDevelopment ? "/api" : "https://lilaai.io/api"; // Use relative path in development
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 // General API configuration
 export const API_CONFIG = {
