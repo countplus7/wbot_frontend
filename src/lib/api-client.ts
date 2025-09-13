@@ -1,4 +1,4 @@
-import { API_CONFIG, API_ERRORS, HTTP_STATUS, type ApiErrorType } from '@/config';
+import { API_CONFIG, API_ERRORS, HTTP_STATUS, type ApiErrorType } from "@/config";
 
 // Enhanced API response interface
 export interface ApiResponse<T = any> {
@@ -16,14 +16,9 @@ export class ApiError extends Error {
   public readonly type: ApiErrorType;
   public readonly data?: any;
 
-  constructor(
-    message: string,
-    status: number,
-    type: ApiErrorType,
-    data?: any
-  ) {
+  constructor(message: string, status: number, type: ApiErrorType, data?: any) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
     this.type = type;
     this.data = data;
@@ -40,8 +35,8 @@ interface RequestConfig extends RequestInit {
 
 // Token management
 class TokenManager {
-  private static readonly TOKEN_KEY = 'auth_token';
-  private static readonly REFRESH_TOKEN_KEY = 'refresh_token';
+  private static readonly TOKEN_KEY = "auth_token";
+  private static readonly REFRESH_TOKEN_KEY = "refresh_token";
 
   static getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
@@ -75,7 +70,7 @@ export class ApiClient {
   constructor(baseURL: string, timeout: number = API_CONFIG.TIMEOUT) {
     this.baseURL = baseURL;
     this.defaultTimeout = timeout;
-    
+
     // Add default auth interceptor
     this.addRequestInterceptor((config) => {
       if (!config.skipAuth) {
@@ -103,14 +98,11 @@ export class ApiClient {
 
   // Sleep utility for retry delays
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   // Enhanced request method with retry logic
-  private async makeRequest<T>(
-    endpoint: string,
-    config: RequestConfig = {}
-  ): Promise<ApiResponse<T>> {
+  private async makeRequest<T>(endpoint: string, config: RequestConfig = {}): Promise<ApiResponse<T>> {
     const {
       timeout = this.defaultTimeout,
       retries = API_CONFIG.RETRY_ATTEMPTS,
@@ -119,7 +111,7 @@ export class ApiClient {
     } = config;
 
     const url = `${this.baseURL}${endpoint}`;
-    
+
     // Apply request interceptors
     let finalConfig = { ...requestConfig };
     for (const interceptor of this.requestInterceptors) {
@@ -128,7 +120,7 @@ export class ApiClient {
 
     // Set default headers
     finalConfig.headers = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...finalConfig.headers,
     };
 
@@ -144,7 +136,7 @@ export class ApiClient {
 
         if (API_CONFIG.ENABLE_LOGGING) {
           console.log(`API Request [Attempt ${attempt + 1}]:`, {
-            method: finalConfig.method || 'GET',
+            method: finalConfig.method || "GET",
             url,
             headers: finalConfig.headers,
           });
@@ -184,12 +176,8 @@ export class ApiClient {
           }
         }
 
-        if (error.name === 'AbortError') {
-          lastError = new ApiError(
-            'Request timeout',
-            408,
-            API_ERRORS.TIMEOUT_ERROR
-          );
+        if (error.name === "AbortError") {
+          lastError = new ApiError("Request timeout", 408, API_ERRORS.TIMEOUT_ERROR);
         }
 
         // If this was the last attempt, throw the error
@@ -199,7 +187,7 @@ export class ApiClient {
 
         // Wait before retrying
         await this.sleep(retryDelay * Math.pow(2, attempt)); // Exponential backoff
-        
+
         if (API_CONFIG.ENABLE_LOGGING) {
           console.log(`Retrying request in ${retryDelay * Math.pow(2, attempt)}ms...`);
         }
@@ -230,13 +218,13 @@ export class ApiClient {
 
   // HTTP methods
   async get<T>(endpoint: string, config?: RequestConfig): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(endpoint, { ...config, method: 'GET' });
+    return this.makeRequest<T>(endpoint, { ...config, method: "GET" });
   }
 
   async post<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(endpoint, {
       ...config,
-      method: 'POST',
+      method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
@@ -244,7 +232,7 @@ export class ApiClient {
   async put<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(endpoint, {
       ...config,
-      method: 'PUT',
+      method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
@@ -252,54 +240,19 @@ export class ApiClient {
   async patch<T>(endpoint: string, data?: any, config?: RequestConfig): Promise<ApiResponse<T>> {
     return this.makeRequest<T>(endpoint, {
       ...config,
-      method: 'PATCH',
+      method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
   async delete<T>(endpoint: string, config?: RequestConfig): Promise<ApiResponse<T>> {
-    return this.makeRequest<T>(endpoint, { ...config, method: 'DELETE' });
-  }
-
-  // Authentication methods
-  async login(credentials: { username: string; password: string }) {
-    const response = await this.post('/auth/login', credentials, { skipAuth: true });
-    if (response.success && response.data) {
-      TokenManager.setToken(response.data.token);
-      if (response.data.refreshToken) {
-        TokenManager.setRefreshToken(response.data.refreshToken);
-      }
-    }
-    return response;
-  }
-
-  async logout() {
-    TokenManager.clearTokens();
-  }
-
-  async refreshToken() {
-    const refreshToken = TokenManager.getRefreshToken();
-    if (!refreshToken) {
-      throw new ApiError('No refresh token available', 401, API_ERRORS.AUTHENTICATION_ERROR);
-    }
-
-    try {
-      const response = await this.post('/auth/refresh', { refreshToken }, { skipAuth: true });
-      if (response.success && response.data) {
-        TokenManager.setToken(response.data.token);
-        return response.data.token;
-      }
-      throw new Error('Failed to refresh token');
-    } catch (error) {
-      TokenManager.clearTokens();
-      throw error;
-    }
+    return this.makeRequest<T>(endpoint, { ...config, method: "DELETE" });
   }
 
   // Health check
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await this.get('/health', { skipAuth: true, retries: 0 });
+      const response = await this.get("/health", { skipAuth: true, retries: 0 });
       return response.success;
     } catch {
       return false;
@@ -309,6 +262,10 @@ export class ApiClient {
 
 // Create singleton instance
 export const apiClient = new ApiClient(API_CONFIG.API_BASE);
+
+// Debug logging
+console.log('API Client initialized with base URL:', API_CONFIG.API_BASE);
+console.log('Environment:', import.meta.env.DEV ? 'development' : 'production');
 
 // Export token manager for external use
 export { TokenManager };

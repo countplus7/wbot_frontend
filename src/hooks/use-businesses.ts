@@ -1,19 +1,24 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { BusinessService, type Business, type CreateBusinessData, type UpdateBusinessData } from '@/lib/services/business-service';
-import { useApi, useMutation as useApiMutation } from './use-api';
-import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  BusinessService,
+  type Business,
+  type CreateBusinessData,
+  type UpdateBusinessData,
+} from "@/lib/services/business-service";
+import { useApi, useMutation as useApiMutation } from "./use-api";
+import { toast } from "sonner";
 
 // Query keys
 export const businessKeys = {
-  all: ['businesses'] as const,
-  lists: () => [...businessKeys.all, 'list'] as const,
+  all: ["businesses"] as const,
+  lists: () => [...businessKeys.all, "list"] as const,
   list: (filters: Record<string, any>) => [...businessKeys.lists(), { filters }] as const,
-  details: () => [...businessKeys.all, 'detail'] as const,
+  details: () => [...businessKeys.all, "detail"] as const,
   detail: (id: number) => [...businessKeys.details(), id] as const,
-  stats: (id: number) => [...businessKeys.detail(id), 'stats'] as const,
-  conversations: (id: number) => [...businessKeys.detail(id), 'conversations'] as const,
-  whatsapp: (id: number) => [...businessKeys.detail(id), 'whatsapp'] as const,
-  tones: (id: number) => [...businessKeys.detail(id), 'tones'] as const,
+  stats: (id: number) => [...businessKeys.detail(id), "stats"] as const,
+  conversations: (id: number) => [...businessKeys.detail(id), "conversations"] as const,
+  whatsapp: (id: number) => [...businessKeys.detail(id), "whatsapp"] as const,
+  tones: (id: number) => [...businessKeys.detail(id), "tones"] as const,
 };
 
 // Get all businesses
@@ -23,7 +28,7 @@ export function useBusinesses() {
     queryFn: async () => {
       const response = await BusinessService.getBusinesses();
       if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch businesses');
+        throw new Error(response.error || "Failed to fetch businesses");
       }
       return response.data;
     },
@@ -39,7 +44,7 @@ export function useBusiness(id: number) {
     queryFn: async () => {
       const response = await BusinessService.getBusiness(id);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch business');
+        throw new Error(response.error || "Failed to fetch business");
       }
       return response.data;
     },
@@ -56,24 +61,21 @@ export function useCreateBusiness() {
     mutationFn: async (data: CreateBusinessData) => {
       const response = await BusinessService.createBusiness(data);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to create business');
+        throw new Error(response.error || "Failed to create business");
       }
       return response.data;
     },
     onSuccess: (newBusiness) => {
       // Update the businesses list
-      queryClient.setQueryData(businessKeys.lists(), (old: Business[] = []) => [
-        ...old,
-        newBusiness,
-      ]);
-      
+      queryClient.setQueryData(businessKeys.lists(), (old: Business[] = []) => [...old, newBusiness]);
+
       // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: businessKeys.lists() });
-      
-      toast.success('Business created successfully');
+
+      toast.success("Business created successfully");
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to create business');
+      toast.error(error.message || "Failed to create business");
     },
   });
 }
@@ -86,25 +88,23 @@ export function useUpdateBusiness() {
     mutationFn: async ({ id, data }: { id: number; data: UpdateBusinessData }) => {
       const response = await BusinessService.updateBusiness(id, data);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to update business');
+        throw new Error(response.error || "Failed to update business");
       }
       return response.data;
     },
     onSuccess: (updatedBusiness, { id }) => {
       // Update specific business
       queryClient.setQueryData(businessKeys.detail(id), updatedBusiness);
-      
+
       // Update businesses list
       queryClient.setQueryData(businessKeys.lists(), (old: Business[] = []) =>
-        old.map(business => 
-          business.id === id ? updatedBusiness : business
-        )
+        old.map((business) => (business.id === id ? updatedBusiness : business))
       );
-      
-      toast.success('Business updated successfully');
+
+      toast.success("Business updated successfully");
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to update business');
+      toast.error(error.message || "Failed to update business");
     },
   });
 }
@@ -117,23 +117,23 @@ export function useDeleteBusiness() {
     mutationFn: async (id: number) => {
       const response = await BusinessService.deleteBusiness(id);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to delete business');
+        throw new Error(response.error || "Failed to delete business");
       }
       return id;
     },
     onSuccess: (deletedId) => {
       // Remove from businesses list
       queryClient.setQueryData(businessKeys.lists(), (old: Business[] = []) =>
-        old.filter(business => business.id !== deletedId)
+        old.filter((business) => business.id !== deletedId)
       );
-      
+
       // Remove individual business cache
       queryClient.removeQueries({ queryKey: businessKeys.detail(deletedId) });
-      
-      toast.success('Business deleted successfully');
+
+      toast.success("Business deleted successfully");
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to delete business');
+      toast.error(error.message || "Failed to delete business");
     },
   });
 }
@@ -146,21 +146,21 @@ export function useBulkDeleteBusinesses() {
     mutationFn: async (ids: number[]) => {
       const response = await BusinessService.bulkDeleteBusinesses(ids);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to delete businesses');
+        throw new Error(response.error || "Failed to delete businesses");
       }
       return { ids, ...response.data };
     },
     onSuccess: ({ ids, deleted, failed }) => {
       // Remove deleted businesses from cache
       queryClient.setQueryData(businessKeys.lists(), (old: Business[] = []) =>
-        old.filter(business => !ids.includes(business.id))
+        old.filter((business) => !ids.includes(business.id))
       );
-      
+
       // Remove individual business caches
-      ids.forEach(id => {
+      ids.forEach((id) => {
         queryClient.removeQueries({ queryKey: businessKeys.detail(id) });
       });
-      
+
       if (failed > 0) {
         toast.warning(`${deleted} businesses deleted, ${failed} failed`);
       } else {
@@ -168,7 +168,7 @@ export function useBulkDeleteBusinesses() {
       }
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to delete businesses');
+      toast.error(error.message || "Failed to delete businesses");
     },
   });
 }
@@ -177,26 +177,24 @@ export function useBulkUpdateBusinessStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ ids, status }: { ids: number[]; status: 'active' | 'inactive' }) => {
+    mutationFn: async ({ ids, status }: { ids: number[]; status: "active" | "inactive" }) => {
       const response = await BusinessService.bulkUpdateBusinessStatus(ids, status);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to update business status');
+        throw new Error(response.error || "Failed to update business status");
       }
       return { ids, status, ...response.data };
     },
     onSuccess: ({ ids, status, updated, failed }) => {
       // Update businesses in cache
       queryClient.setQueryData(businessKeys.lists(), (old: Business[] = []) =>
-        old.map(business => 
-          ids.includes(business.id) ? { ...business, status } : business
-        )
+        old.map((business) => (ids.includes(business.id) ? { ...business, status } : business))
       );
-      
+
       // Invalidate individual business caches
-      ids.forEach(id => {
+      ids.forEach((id) => {
         queryClient.invalidateQueries({ queryKey: businessKeys.detail(id) });
       });
-      
+
       if (failed > 0) {
         toast.warning(`${updated} businesses updated, ${failed} failed`);
       } else {
@@ -204,7 +202,7 @@ export function useBulkUpdateBusinessStatus() {
       }
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to update business status');
+      toast.error(error.message || "Failed to update business status");
     },
   });
 }
@@ -216,9 +214,10 @@ export function useWhatsAppConfig(businessId: number) {
     queryFn: async () => {
       const response = await BusinessService.getWhatsAppConfig(businessId);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch WhatsApp config');
+        throw new Error(response.error || "Failed to fetch WhatsApp config");
       }
-      return response.data;
+      // Return null instead of undefined when no config exists
+      return response.data || null;
     },
     enabled: !!businessId,
     staleTime: 2 * 60 * 1000, // 2 minutes
@@ -232,16 +231,16 @@ export function useCreateWhatsAppConfig() {
     mutationFn: async ({ businessId, data }: { businessId: number; data: any }) => {
       const response = await BusinessService.createWhatsAppConfig(businessId, data);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to create WhatsApp config');
+        throw new Error(response.error || "Failed to create WhatsApp config");
       }
       return response.data;
     },
     onSuccess: (_, { businessId }) => {
       queryClient.invalidateQueries({ queryKey: businessKeys.whatsapp(businessId) });
-      toast.success('WhatsApp configuration created successfully');
+      toast.success("WhatsApp configuration created successfully");
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to create WhatsApp configuration');
+      toast.error(error.message || "Failed to create WhatsApp configuration");
     },
   });
 }
@@ -253,32 +252,32 @@ export function useUpdateWhatsAppConfig() {
     mutationFn: async ({ businessId, data }: { businessId: number; data: any }) => {
       const response = await BusinessService.updateWhatsAppConfig(businessId, data);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to update WhatsApp config');
+        throw new Error(response.error || "Failed to update WhatsApp config");
       }
       return response.data;
     },
     onSuccess: (_, { businessId }) => {
       queryClient.invalidateQueries({ queryKey: businessKeys.whatsapp(businessId) });
-      toast.success('WhatsApp configuration updated successfully');
+      toast.success("WhatsApp configuration updated successfully");
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to update WhatsApp configuration');
+      toast.error(error.message || "Failed to update WhatsApp configuration");
     },
   });
 }
 
 // Business tones hooks
-export function useBusinessTones(businessId: number) {
+export function useBusinessTones(businessId: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: businessKeys.tones(businessId),
     queryFn: async () => {
       const response = await BusinessService.getBusinessTones(businessId);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch business tones');
+        throw new Error(response.error || "Failed to fetch business tones");
       }
       return response.data;
     },
-    enabled: !!businessId,
+    enabled: !!businessId && (options?.enabled !== false),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -290,16 +289,16 @@ export function useCreateBusinessTone() {
     mutationFn: async ({ businessId, data }: { businessId: number; data: any }) => {
       const response = await BusinessService.createBusinessTone(businessId, data);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to create business tone');
+        throw new Error(response.error || "Failed to create business tone");
       }
       return response.data;
     },
     onSuccess: (_, { businessId }) => {
       queryClient.invalidateQueries({ queryKey: businessKeys.tones(businessId) });
-      toast.success('Business tone created successfully');
+      toast.success("Business tone created successfully");
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to create business tone');
+      toast.error(error.message || "Failed to create business tone");
     },
   });
 }
@@ -311,19 +310,19 @@ export function useUpdateBusinessTone() {
     mutationFn: async ({ toneId, data }: { toneId: number; data: any }) => {
       const response = await BusinessService.updateBusinessTone(toneId, data);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to update business tone');
+        throw new Error(response.error || "Failed to update business tone");
       }
       return response.data;
     },
     onSuccess: (updatedTone) => {
       // Invalidate tones for the business
-      queryClient.invalidateQueries({ 
-        queryKey: businessKeys.tones(updatedTone.business_id) 
+      queryClient.invalidateQueries({
+        queryKey: businessKeys.tones(updatedTone.business_id),
       });
-      toast.success('Business tone updated successfully');
+      toast.success("Business tone updated successfully");
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to update business tone');
+      toast.error(error.message || "Failed to update business tone");
     },
   });
 }
@@ -335,35 +334,38 @@ export function useDeleteBusinessTone() {
     mutationFn: async (toneId: number) => {
       const response = await BusinessService.deleteBusinessTone(toneId);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to delete business tone');
+        throw new Error(response.error || "Failed to delete business tone");
       }
       return toneId;
     },
     onSuccess: () => {
       // Invalidate all tone queries
-      queryClient.invalidateQueries({ 
+      queryClient.invalidateQueries({
         queryKey: businessKeys.all,
-        predicate: (query) => query.queryKey.includes('tones')
+        predicate: (query) => query.queryKey.includes("tones"),
       });
-      toast.success('Business tone deleted successfully');
+      toast.success("Business tone deleted successfully");
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to delete business tone');
+      toast.error(error.message || "Failed to delete business tone");
     },
   });
 }
 
 // Business stats hook
-export function useBusinessStats(businessId: number, params?: {
-  startDate?: string;
-  endDate?: string;
-}) {
+export function useBusinessStats(
+  businessId: number,
+  params?: {
+    startDate?: string;
+    endDate?: string;
+  }
+) {
   return useQuery({
     queryKey: [...businessKeys.stats(businessId), params],
     queryFn: async () => {
       const response = await BusinessService.getBusinessStats(businessId, params);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch business stats');
+        throw new Error(response.error || "Failed to fetch business stats");
       }
       return response.data;
     },
@@ -373,17 +375,20 @@ export function useBusinessStats(businessId: number, params?: {
 }
 
 // Conversations hook
-export function useConversations(businessId: number, params?: {
-  page?: number;
-  limit?: number;
-  status?: 'active' | 'archived';
-}) {
+export function useConversations(
+  businessId: number,
+  params?: {
+    page?: number;
+    limit?: number;
+    status?: "active" | "archived";
+  }
+) {
   return useQuery({
     queryKey: [...businessKeys.conversations(businessId), params],
     queryFn: async () => {
       const response = await BusinessService.getConversations(businessId, params);
       if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch conversations');
+        throw new Error(response.error || "Failed to fetch conversations");
       }
       return response.data;
     },
@@ -395,7 +400,14 @@ export function useConversations(businessId: number, params?: {
 // Custom hook for real-time business health monitoring
 export function useBusinessHealth() {
   return useApi(
-    () => BusinessService.healthCheck(),
+    async () => {
+      const isHealthy = await BusinessService.healthCheck();
+      return {
+        success: true,
+        data: isHealthy,
+        message: isHealthy ? "Service is healthy" : "Service is unhealthy",
+      };
+    },
     {
       immediate: true,
       retry: true,

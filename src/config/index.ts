@@ -1,13 +1,10 @@
-// src/config/apiConfig.ts
-import axios from "axios";
-
+// src/config/index.ts
 // Detect environment
 const isDevelopment = import.meta.env.DEV;
 const isProduction = import.meta.env.PROD;
 
 // Base URL from environment, with fallback
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000/api";
+const API_BASE = isDevelopment ? "/api" : "http://localhost:5000/api"; // Use relative path in development
 
 // General API configuration
 export const API_CONFIG = {
@@ -15,15 +12,13 @@ export const API_CONFIG = {
   TIMEOUT: 30000,
   RETRY_ATTEMPTS: isProduction ? 2 : 0,
   RETRY_DELAY: 1000,
-
   ENABLE_LOGGING: isDevelopment,
   ENABLE_CACHE: isProduction,
   CACHE_DURATION: 5 * 60 * 1000, // 5 minutes
 } as const;
 
 // Helper to build full endpoint URLs
-export const getEndpoint = (path: string) =>
-  `${API_CONFIG.API_BASE}${path}`;
+export const getEndpoint = (path: string) => `${API_CONFIG.API_BASE}${path}`;
 
 // Helper to build headers (multi-tenant & auth)
 export const getHeaders = (token?: string, businessId?: number) => {
@@ -55,10 +50,8 @@ export const API_ENDPOINTS = {
     CALENDAR: {
       LIST: (businessId: number) => `/google/calendar/events/${businessId}`,
       CREATE: (businessId: number) => `/google/calendar/event/${businessId}`,
-      UPDATE: (businessId: number, eventId: string) =>
-        `/google/calendar/event/${businessId}/${eventId}`,
-      DELETE: (businessId: number, eventId: string) =>
-        `/google/calendar/event/${businessId}/${eventId}`,
+      UPDATE: (businessId: number, eventId: string) => `/google/calendar/event/${businessId}/${eventId}`,
+      DELETE: (businessId: number, eventId: string) => `/google/calendar/event/${businessId}/${eventId}`,
       UPCOMING: (businessId: number) => `/google/calendar/upcoming/${businessId}`,
       SEARCH: (businessId: number) => `/google/calendar/search/${businessId}`,
     },
@@ -104,9 +97,3 @@ export const API_ERRORS = {
 } as const;
 
 export type ApiErrorType = keyof typeof API_ERRORS;
-
-// Axios instance with defaults
-export const apiClient = axios.create({
-  baseURL: API_CONFIG.API_BASE,
-  timeout: API_CONFIG.TIMEOUT,
-});

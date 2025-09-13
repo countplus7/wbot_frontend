@@ -1,12 +1,12 @@
-import { apiClient, type ApiResponse } from '@/lib/api-client';
-import { API_ENDPOINTS } from '@/config';
+import { apiClient, type ApiResponse } from "@/lib/api-client";
+import { API_ENDPOINTS } from "@/config";
 
 // Business interfaces
 export interface Business {
   id: number;
   name: string;
   description?: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
   created_at: string;
   updated_at: string;
 }
@@ -14,7 +14,7 @@ export interface Business {
 export interface CreateBusinessData {
   name: string;
   description?: string;
-  status?: 'active' | 'inactive';
+  status?: "active" | "inactive";
 }
 
 export interface UpdateBusinessData extends Partial<CreateBusinessData> {}
@@ -26,23 +26,23 @@ export interface WhatsAppConfig {
   access_token: string;
   verify_token: string;
   webhook_url?: string;
-  status: 'active' | 'inactive';
+  status: "active" | "inactive";
 }
 
 export interface BusinessTone {
   id: number;
   business_id: number;
-  tone_name: string;
+  name: string; // Change from 'tone_name' to 'name' to match backend
+  description?: string; // Add this missing field
   tone_instructions: string;
-  is_default: boolean;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateBusinessToneData {
   tone_name: string;
+  description?: string; // Add description field
   tone_instructions: string;
-  is_default?: boolean;
 }
 
 export interface Conversation {
@@ -52,21 +52,23 @@ export interface Conversation {
   contact_name?: string;
   last_message_at: string;
   message_count: number;
-  status: 'active' | 'archived';
+  status: "active" | "archived";
+  created_at: string; // Add this missing property
+  updated_at: string; // Add this missing property
 }
 
 export interface Message {
   id: number;
   conversation_id: number;
   message_id: string;
-  direction: 'inbound' | 'outbound';
-  message_type: 'text' | 'image' | 'audio' | 'document';
+  direction: "inbound" | "outbound";
+  message_type: "text" | "image" | "audio" | "document";
   content?: string;
   media_url?: string;
   file_name?: string;
   file_type?: string;
   timestamp: string;
-  status: 'sent' | 'delivered' | 'read' | 'failed';
+  status: "sent" | "delivered" | "read" | "failed";
 }
 
 // Enhanced Business Service
@@ -97,11 +99,17 @@ export class BusinessService {
     return apiClient.get<WhatsAppConfig>(`/basic/businesses/${businessId}/whatsapp`);
   }
 
-  static async createWhatsAppConfig(businessId: number, data: Omit<WhatsAppConfig, 'id' | 'business_id'>): Promise<ApiResponse<WhatsAppConfig>> {
+  static async createWhatsAppConfig(
+    businessId: number,
+    data: Omit<WhatsAppConfig, "id" | "business_id">
+  ): Promise<ApiResponse<WhatsAppConfig>> {
     return apiClient.post<WhatsAppConfig>(`/basic/businesses/${businessId}/whatsapp`, data);
   }
 
-  static async updateWhatsAppConfig(businessId: number, data: Partial<Omit<WhatsAppConfig, 'id' | 'business_id'>>): Promise<ApiResponse<WhatsAppConfig>> {
+  static async updateWhatsAppConfig(
+    businessId: number,
+    data: Partial<Omit<WhatsAppConfig, "id" | "business_id">>
+  ): Promise<ApiResponse<WhatsAppConfig>> {
     return apiClient.put<WhatsAppConfig>(`/basic/businesses/${businessId}/whatsapp`, data);
   }
 
@@ -114,11 +122,17 @@ export class BusinessService {
     return apiClient.get<BusinessTone[]>(`/basic/businesses/${businessId}/tones`);
   }
 
-  static async createBusinessTone(businessId: number, data: CreateBusinessToneData): Promise<ApiResponse<BusinessTone>> {
+  static async createBusinessTone(
+    businessId: number,
+    data: CreateBusinessToneData
+  ): Promise<ApiResponse<BusinessTone>> {
     return apiClient.post<BusinessTone>(`/basic/businesses/${businessId}/tones`, data);
   }
 
-  static async updateBusinessTone(toneId: number, data: Partial<CreateBusinessToneData>): Promise<ApiResponse<BusinessTone>> {
+  static async updateBusinessTone(
+    toneId: number,
+    data: Partial<CreateBusinessToneData>
+  ): Promise<ApiResponse<BusinessTone>> {
     return apiClient.put<BusinessTone>(`/basic/tones/${toneId}`, data);
   }
 
@@ -127,76 +141,90 @@ export class BusinessService {
   }
 
   // Conversations and messages
-  static async getConversations(businessId: number, params?: {
-    page?: number;
-    limit?: number;
-    status?: 'active' | 'archived';
-  }): Promise<ApiResponse<{ conversations: Conversation[]; total: number; page: number; limit: number }>> {
+  static async getConversations(
+    businessId: number,
+    params?: {
+      page?: number;
+      limit?: number;
+      status?: "active" | "archived";
+    }
+  ): Promise<ApiResponse<{ conversations: Conversation[]; total: number; page: number; limit: number }>> {
     const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.status) queryParams.append('status', params.status);
-    
-    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+    if (params?.status) queryParams.append("status", params.status);
+
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
     return apiClient.get<{ conversations: Conversation[]; total: number; page: number; limit: number }>(
       `/basic/businesses/${businessId}/conversations${query}`
     );
   }
 
-  static async getConversationMessages(conversationId: number, params?: {
-    page?: number;
-    limit?: number;
-  }): Promise<ApiResponse<{ messages: Message[]; total: number; page: number; limit: number }>> {
+  static async getConversationMessages(
+    conversationId: number,
+    params?: {
+      page?: number;
+      limit?: number;
+    }
+  ): Promise<ApiResponse<{ messages: Message[]; total: number; page: number; limit: number }>> {
     const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    
-    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    if (params?.page) queryParams.append("page", params.page.toString());
+    if (params?.limit) queryParams.append("limit", params.limit.toString());
+
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
     return apiClient.get<{ messages: Message[]; total: number; page: number; limit: number }>(
       `/basic/conversations/${conversationId}/messages${query}`
     );
   }
 
   static async archiveConversation(conversationId: number): Promise<ApiResponse<void>> {
-    return apiClient.patch<void>(`/basic/conversations/${conversationId}`, { status: 'archived' });
+    return apiClient.patch<void>(`/basic/conversations/${conversationId}`, { status: "archived" });
   }
 
   static async unarchiveConversation(conversationId: number): Promise<ApiResponse<void>> {
-    return apiClient.patch<void>(`/basic/conversations/${conversationId}`, { status: 'active' });
+    return apiClient.patch<void>(`/basic/conversations/${conversationId}`, { status: "active" });
   }
 
   // Bulk operations
   static async bulkDeleteBusinesses(ids: number[]): Promise<ApiResponse<{ deleted: number; failed: number }>> {
-    return apiClient.post<{ deleted: number; failed: number }>('/basic/businesses/bulk-delete', { ids });
+    return apiClient.post<{ deleted: number; failed: number }>("/basic/businesses/bulk-delete", { ids });
   }
 
-  static async bulkUpdateBusinessStatus(ids: number[], status: 'active' | 'inactive'): Promise<ApiResponse<{ updated: number; failed: number }>> {
-    return apiClient.post<{ updated: number; failed: number }>('/basic/businesses/bulk-update-status', { ids, status });
+  static async bulkUpdateBusinessStatus(
+    ids: number[],
+    status: "active" | "inactive"
+  ): Promise<ApiResponse<{ updated: number; failed: number }>> {
+    return apiClient.post<{ updated: number; failed: number }>("/basic/businesses/bulk-update-status", { ids, status });
   }
 
   // Analytics and stats
-  static async getBusinessStats(businessId: number, params?: {
-    startDate?: string;
-    endDate?: string;
-  }): Promise<ApiResponse<{
-    totalConversations: number;
-    totalMessages: number;
-    activeConversations: number;
-    messagesByType: Record<string, number>;
-    conversationsByDay: Array<{ date: string; count: number }>;
-  }>> {
+  static async getBusinessStats(
+    businessId: number,
+    params?: {
+      startDate?: string;
+      endDate?: string;
+    }
+  ): Promise<
+    ApiResponse<{
+      totalConversations: number;
+      totalMessages: number;
+      activeConversations: number;
+      messagesByType: Record<string, number>;
+      conversationsByDay: Array<{ date: string; count: number }>;
+    }>
+  > {
     const queryParams = new URLSearchParams();
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    
-    const query = queryParams.toString() ? `?${queryParams.toString()}` : '';
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+
+    const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
     return apiClient.get(`/basic/businesses/${businessId}/stats${query}`);
   }
 
   // Health check for business services
   static async healthCheck(): Promise<boolean> {
     try {
-      const response = await apiClient.get('/health', { skipAuth: true, retries: 0 });
+      const response = await apiClient.get("/health", { skipAuth: true, retries: 0 });
       return response.success;
     } catch {
       return false;

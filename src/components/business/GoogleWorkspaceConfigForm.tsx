@@ -45,14 +45,14 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
     try {
       setLoading(true);
       setError(null);
-      
+
       // Get configuration
       const configResponse = await GoogleService.getGoogleConfig(businessId);
-      
+
       if (configResponse.success && configResponse.data) {
         setConfig(configResponse.data);
         setIntegrationStatus({
-          isIntegrated: configResponse.data.status === 'active',
+          isIntegrated: configResponse.data.status === "active",
           email: configResponse.data.client_id, // Using client_id as identifier
           lastUpdated: configResponse.data.last_sync,
           services: {
@@ -60,7 +60,7 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
             calendar: true,
             drive: true,
             sheets: true,
-          }
+          },
         });
       } else {
         setIntegrationStatus({ isIntegrated: false });
@@ -84,7 +84,6 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
       // For now, we'll show a message that manual configuration is required
       // In a real implementation, this would redirect to Google OAuth
       setError("Google OAuth integration requires manual configuration. Please contact your administrator.");
-      
     } catch (err) {
       console.error("Error initiating Google auth:", err);
       setError("Failed to initiate Google authentication");
@@ -100,14 +99,14 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
 
       // Test connection
       const response = await GoogleService.testGoogleConnection(businessId);
-      
+
       if (response.success && response.data) {
-        setIntegrationStatus(prev => ({
+        setIntegrationStatus((prev) => ({
           ...prev,
           services: response.data.services,
         }));
-        
-        if (response.data.status === 'connected') {
+
+        if (response.data.status === "connected") {
           setError(null);
         } else {
           setError("Connection test failed: " + response.data.status);
@@ -130,7 +129,7 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
 
       // Delete configuration
       const response = await GoogleService.deleteGoogleConfig(businessId);
-      
+
       if (response.success) {
         setIntegrationStatus({ isIntegrated: false });
         setConfig(null);
@@ -184,14 +183,12 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
 
   const renderServiceStatus = (service: string, icon: React.ReactNode) => {
     const isActive = integrationStatus.services?.[service] || false;
-    
+
     return (
       <div className="flex items-center space-x-2">
         {icon}
         <span className="text-sm">{service.charAt(0).toUpperCase() + service.slice(1)}</span>
-        <Badge variant={isActive ? "default" : "secondary"}>
-          {isActive ? "Active" : "Inactive"}
-        </Badge>
+        <Badge variant={isActive ? "default" : "secondary"}>{isActive ? "Active" : "Inactive"}</Badge>
       </div>
     );
   };
@@ -221,34 +218,20 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
               <h4 className="text-sm font-medium">Integration Status</h4>
               {renderIntegrationStatus()}
             </div>
-            
+
             <div className="flex space-x-2">
               {integrationStatus.isIntegrated ? (
                 <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleTestConnection}
-                    disabled={loading}
-                  >
+                  <Button variant="outline" size="sm" onClick={handleTestConnection} disabled={loading}>
                     Test Connection
                   </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleRemoveIntegration}
-                    disabled={loading}
-                  >
+                  <Button variant="destructive" size="sm" onClick={handleRemoveIntegration} disabled={loading}>
                     <Trash2 className="h-4 w-4 mr-1" />
                     Remove
                   </Button>
                 </>
               ) : (
-                <Button
-                  onClick={handleGoogleAuth}
-                  disabled={loading}
-                  size="sm"
-                >
+                <Button onClick={handleGoogleAuth} disabled={loading} size="sm">
                   <ExternalLink className="h-4 w-4 mr-1" />
                   Connect Google
                 </Button>
@@ -277,11 +260,19 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
               <div>
                 <h4 className="text-sm font-medium mb-2">Configuration Details</h4>
                 <div className="text-sm text-muted-foreground space-y-1">
-                  <p><strong>Status:</strong> {config.status}</p>
-                  <p><strong>Client ID:</strong> {config.client_id.substring(0, 20)}...</p>
-                  <p><strong>Scopes:</strong> {config.scopes.join(", ")}</p>
+                  <p>
+                    <strong>Status:</strong> {config.status}
+                  </p>
+                  <p>
+                    <strong>Client ID:</strong> {config.client_id.substring(0, 20)}...
+                  </p>
+                  <p>
+                    <strong>Scopes:</strong> {config.scopes.join(", ")}
+                  </p>
                   {config.last_sync && (
-                    <p><strong>Last Sync:</strong> {new Date(config.last_sync).toLocaleString()}</p>
+                    <p>
+                      <strong>Last Sync:</strong> {new Date(config.last_sync).toLocaleString()}
+                    </p>
                   )}
                 </div>
               </div>
@@ -290,7 +281,7 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
         </CardContent>
       </Card>
 
-      <div className="flex justify-end space-x-2">
+      {/* <div className="flex justify-end space-x-2">
         {onCancel && (
           <Button variant="outline" onClick={onCancel}>
             Cancel
@@ -301,7 +292,7 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
             Continue
           </Button>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };

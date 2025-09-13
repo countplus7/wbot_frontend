@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
+import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -12,8 +12,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { AlertCircle, User, Mail, Lock, Save, Settings } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { AlertCircle, User, Mail, Lock, Save, Settings } from "lucide-react";
 
 interface ProfileSettingsDialogProps {
   children: React.ReactNode;
@@ -23,11 +23,11 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
   const { user, token, updateUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
-    username: user?.username || '',
-    email: user?.email || '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    username: user?.username || "",
+    email: user?.email || "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -35,43 +35,43 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
 
   useEffect(() => {
     if (user && open) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        username: user.username || '',
-        email: user.email || ''
+        username: user.username || "",
+        email: user.email || "",
       }));
     }
   }, [user, open]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const validateForm = () => {
     if (!formData.username || !formData.email) {
-      setError('Username and email are required');
+      setError("Username and email are required");
       return false;
     }
 
     if (formData.newPassword) {
       if (formData.newPassword.length < 6) {
-        setError('New password must be at least 6 characters long');
+        setError("New password must be at least 6 characters long");
         return false;
       }
 
       if (formData.newPassword !== formData.confirmPassword) {
-        setError('New passwords do not match');
+        setError("New passwords do not match");
         return false;
       }
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
+      setError("Please enter a valid email address");
       return false;
     }
 
@@ -80,7 +80,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
@@ -90,18 +90,18 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
     try {
       const updateData: any = {
         username: formData.username,
-        email: formData.email
+        email: formData.email,
       };
 
       if (formData.newPassword) {
         updateData.password = formData.newPassword;
       }
 
-      const response = await fetch('/api/auth/profile', {
-        method: 'PUT',
+      const response = await fetch("/api/auth/profile", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(updateData),
       });
@@ -110,23 +110,23 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
 
       if (data.success) {
         updateUser(data.user);
-        setSuccess('Profile updated successfully');
-        setFormData(prev => ({
+        setSuccess("Profile updated successfully");
+        setFormData((prev) => ({
           ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
         }));
-        // Close dialog after 2 seconds
-        setTimeout(() => {
-          setOpen(false);
-          setSuccess(null);
-        }, 2000);
+        // Remove the automatic close - let user close manually
+        // setTimeout(() => {
+        //   setOpen(false);
+        //   setSuccess(null);
+        // }, 2000);
       } else {
-        setError(data.error || 'Update failed');
+        setError(data.error || "Update failed");
       }
     } catch (err) {
-      setError('Network error. Please try again.');
+      setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -138,29 +138,25 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
       // Reset form when dialog closes
       setError(null);
       setSuccess(null);
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       }));
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
             Profile Settings
           </DialogTitle>
-          <DialogDescription>
-            Update your account information and change your password
-          </DialogDescription>
+          <DialogDescription>Update your account information and change your password</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -182,7 +178,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
               <User className="h-4 w-4" />
               Basic Information
             </h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
@@ -219,8 +215,10 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
               <Lock className="h-4 w-4" />
               Change Password
             </h3>
-            <p className="text-sm text-gray-600">Leave password fields empty if you don't want to change your password.</p>
-            
+            <p className="text-sm text-gray-600">
+              Leave password fields empty if you don't want to change your password.
+            </p>
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
@@ -251,19 +249,10 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setOpen(false)}
-              disabled={loading}
-            >
+            <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
+            <Button type="submit" disabled={loading} className="flex items-center gap-2">
               <Save className="h-4 w-4" />
               {loading ? "Updating..." : "Update Profile"}
             </Button>
@@ -272,4 +261,4 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ ch
       </DialogContent>
     </Dialog>
   );
-}; 
+};

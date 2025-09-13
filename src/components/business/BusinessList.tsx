@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useBusinesses, useDeleteBusiness } from "@/hooks/use-businesses";
+import { useBusinesses, useDeleteBusiness, useBusinessTones } from "@/hooks/use-businesses";
 import { BusinessForm } from "./BusinessForm";
 import { WhatsAppConfigForm } from "./WhatsAppConfigForm";
 import { BusinessToneForm } from "./BusinessToneForm";
@@ -34,6 +34,16 @@ export const BusinessList: React.FC = () => {
 
   const { data: businesses = [], isLoading, error } = useBusinesses();
   const deleteBusiness = useDeleteBusiness();
+
+  // Only call the hook when tone modal is opened
+  const { data: existingTones = [], isLoading: tonesLoading } = useBusinessTones(
+    formType === "tone" ? (selectedBusiness?.id || 0) : 0
+  );
+
+  // Add debug logging
+  console.log("BusinessList - selectedBusiness:", selectedBusiness);
+  console.log("BusinessList - existingTones:", existingTones);
+  console.log("BusinessList - formType:", formType);
 
   // Filter businesses based on search query
   const filteredBusinesses = useMemo(() => {
@@ -108,7 +118,13 @@ export const BusinessList: React.FC = () => {
       case "whatsapp":
         return <WhatsAppConfigForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
       case "tone":
-        return <BusinessToneForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
+        return (
+          <BusinessToneForm
+            businessId={selectedBusiness?.id || 0}
+            onSuccess={closeForm}
+            onCancel={closeForm}
+          />
+        );
       case "google":
         return (
           <GoogleWorkspaceConfigForm

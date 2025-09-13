@@ -1,20 +1,17 @@
-import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useWhatsAppConfig, useCreateWhatsAppConfig, useUpdateWhatsAppConfig } from '@/hooks/use-businesses';
-import type { WhatsAppConfig } from '@/lib/services/business-service';
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useWhatsAppConfig, useCreateWhatsAppConfig, useUpdateWhatsAppConfig } from "@/hooks/use-businesses";
 
 const whatsappConfigSchema = z.object({
-  phone_number_id: z.string().min(1, 'Phone number ID is required'),
-  access_token: z.string().min(1, 'Access token is required'),
+  phone_number_id: z.string().min(1, "Phone number ID is required"),
+  access_token: z.string().min(1, "Access token is required"),
   verify_token: z.string().optional(),
-  webhook_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
-
+  webhook_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
 type WhatsAppConfigFormData = z.infer<typeof whatsappConfigSchema>;
@@ -25,11 +22,7 @@ interface WhatsAppConfigFormProps {
   onCancel: () => void;
 }
 
-export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({
-  businessId,
-  onSuccess,
-  onCancel,
-}) => {
+export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({ businessId, onSuccess, onCancel }) => {
   const { data: existingConfig } = useWhatsAppConfig(businessId);
   const createConfig = useCreateWhatsAppConfig();
   const updateConfig = useUpdateWhatsAppConfig();
@@ -37,27 +30,27 @@ export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({
   const form = useForm<WhatsAppConfigFormData>({
     resolver: zodResolver(whatsappConfigSchema),
     defaultValues: {
-      phone_number_id: '',
-      access_token: '',
-      verify_token: '',
-      webhook_url: '',
+      phone_number_id: "",
+      access_token: "",
+      verify_token: "",
+      webhook_url: "",
     },
   });
 
   useEffect(() => {
-    if (existingConfig) {
+    if (isEditing) {
       form.reset({
         phone_number_id: existingConfig.phone_number_id,
         access_token: existingConfig.access_token,
-        verify_token: existingConfig.verify_token || '',
-        webhook_url: existingConfig.webhook_url || '',
+        verify_token: existingConfig.verify_token || "",
+        webhook_url: existingConfig.webhook_url || "",
       });
     }
   }, [existingConfig, form]);
 
   const onSubmit = async (data: WhatsAppConfigFormData) => {
     try {
-      if (existingConfig) {
+      if (isEditing) {
         await updateConfig.mutateAsync({
           businessId,
           data: {
@@ -85,7 +78,17 @@ export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({
   };
 
   const isLoading = createConfig.isPending || updateConfig.isPending;
-  const isEditing = !!existingConfig;
+  // Fix: Check for actual config data, not just truthiness of empty object
+  const isEditing = existingConfig && (existingConfig.id || existingConfig.access_token);
+
+  // Debug logging
+  console.log("WhatsApp Config Debug:", {
+    existingConfig,
+    isEditing,
+    hasId: existingConfig?.id,
+    hasAccessToken: existingConfig?.access_token,
+    configKeys: existingConfig ? Object.keys(existingConfig) : "null",
+  });
 
   return (
     <Form {...form}>
@@ -97,11 +100,7 @@ export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({
             <FormItem>
               <FormLabel>Phone Number ID *</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Enter WhatsApp phone number ID" 
-                  autoComplete="username"
-                  {...field} 
-                />
+                <Input placeholder="Enter WhatsApp phone number ID" autoComplete="username" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -148,11 +147,7 @@ export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({
             <FormItem>
               <FormLabel>Webhook URL</FormLabel>
               <FormControl>
-                <Input
-                  type="url"
-                  placeholder="https://yourdomain.com/webhook"
-                  {...field}
-                />
+                <Input type="url" placeholder="https://yourdomain.com/webhook" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -164,10 +159,10 @@ export const WhatsAppConfigForm: React.FC<WhatsAppConfigFormProps> = ({
             Cancel
           </Button>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : (isEditing ? 'Update' : 'Create')}
+            {isLoading ? "Saving..." : isEditing ? "Update" : "Create"}
           </Button>
         </div>
       </form>
     </Form>
   );
-}; 
+};

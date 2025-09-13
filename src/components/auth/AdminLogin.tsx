@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, User, Lock } from "lucide-react";
+import { authService, type LoginCredentials } from "@/lib/services/auth-service";
+import { ApiError } from "@/lib/api-client";
 
 interface AdminLoginProps {
   onLoginSuccess: (user: any, token: string) => void;
@@ -12,7 +14,7 @@ interface AdminLoginProps {
 }
 
 export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onSwitchToSignup }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<LoginCredentials>({
     username: "",
     password: "",
   });
@@ -39,23 +41,19 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onLoginSuccess, onSwitch
     setError(null);
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      const response = await authService.login(formData);
 
-      const data = await response.json();
-
-      if (data.success) {
-        onLoginSuccess(data.user, data.token);
+      if (response.success && response.data) {
+        onLoginSuccess(response.data.user, response.data.token);
       } else {
-        setError(data.error || "Login failed");
+        setError(response.error || "Login failed");
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Network error. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

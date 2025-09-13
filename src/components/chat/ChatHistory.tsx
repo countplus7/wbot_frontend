@@ -324,7 +324,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
                         <div className="flex items-center gap-2 mb-1">
                           {getMessageIcon(message)}
                           <span className="text-xs opacity-70">{getMessageTypeIcon(message.message_type)}</span>
-                          <span className="text-xs opacity-70">{formatDate(message.created_at)}</span>
+                          <span className="text-xs opacity-70">{formatDate(message.timestamp)}</span>
                         </div>
 
                         {message.content && <div className="text-sm">{message.content}</div>}

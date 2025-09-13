@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, UserPlus, Mail, User, Lock } from "lucide-react";
+import { authService, type SignupCredentials } from "@/lib/services/auth-service";
+import { ApiError } from "@/lib/api-client";
 
 interface AdminSignupProps {
   onSignupSuccess: (user: any, token: string) => void;
@@ -12,7 +14,7 @@ interface AdminSignupProps {
 }
 
 export const AdminSignup: React.FC<AdminSignupProps> = ({ onSignupSuccess, onSwitchToLogin }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<SignupCredentials & { confirmPassword: string }>({
     username: "",
     email: "",
     password: "",
@@ -28,11 +30,19 @@ export const AdminSignup: React.FC<AdminSignupProps> = ({ onSignupSuccess, onSwi
 
   const checkAdminExists = async () => {
     try {
-      const response = await fetch("/api/auth/admin-exists");
-      const data = await response.json();
-      setAdminExists(data.adminExists);
+      const response = await authService.checkAdminExists();
+      console.log("Admin exists response:", response); // Debug log
+      if (response.success) {
+        // Handle both possible response formats
+        const adminExists = response.data?.adminExists ?? response.data.adminExists;
+        setAdminExists(adminExists);
+        console.log("Set adminExists to:", adminExists); // Debug log
+      } else {
+        setAdminExists(false);
+      }
     } catch (err) {
       console.error("Error checking admin existence:", err);
+      setAdminExists(false);
     }
   };
 
@@ -78,27 +88,20 @@ export const AdminSignup: React.FC<AdminSignupProps> = ({ onSignupSuccess, onSwi
     setError(null);
 
     try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
+      const { confirmPassword, ...signupData } = formData;
+      const response = await authService.signup(signupData);
 
-      const data = await response.json();
-
-      if (data.success) {
-        onSignupSuccess(data.user, data.token);
+      if (response.success && response.data) {
+        onSignupSuccess(response.data.user, response.data.token);
       } else {
-        setError(data.error || "Signup failed");
+        setError(response.error || "Signup failed");
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Network error. Please try again.");
+      }
     } finally {
       setLoading(false);
     }

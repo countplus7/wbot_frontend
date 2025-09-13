@@ -1,25 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
-import { AlertCircle, User, Mail, Lock, Save } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { AlertCircle, User, Mail, Lock, Save } from "lucide-react";
+import { authService, type User as UserType, type ProfileUpdateData } from "@/lib/services/auth-service";
+import { ApiError } from "@/lib/api-client";
 
 interface AdminProfileProps {
-  user: any;
+  user: UserType;
   token: string;
-  onProfileUpdate: (user: any) => void;
+  onProfileUpdate: (user: UserType) => void;
+}
+
+interface ProfileFormData {
+  username: string;
+  email: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 export const AdminProfile: React.FC<AdminProfileProps> = ({ user, token, onProfileUpdate }) => {
-  const [formData, setFormData] = useState({
-    username: user?.username || '',
-    email: user?.email || '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+  const [formData, setFormData] = useState<ProfileFormData>({
+    username: user?.username || "",
+    email: user?.email || "",
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,43 +37,43 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({ user, token, onProfi
 
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        username: user.username || '',
-        email: user.email || ''
+        username: user.username || "",
+        email: user.email || "",
       }));
     }
   }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const validateForm = () => {
     if (!formData.username || !formData.email) {
-      setError('Username and email are required');
+      setError("Username and email are required");
       return false;
     }
 
     if (formData.newPassword) {
       if (formData.newPassword.length < 6) {
-        setError('New password must be at least 6 characters long');
+        setError("New password must be at least 6 characters long");
         return false;
       }
 
       if (formData.newPassword !== formData.confirmPassword) {
-        setError('New passwords do not match');
+        setError("New passwords do not match");
         return false;
       }
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError('Please enter a valid email address');
+      setError("Please enter a valid email address");
       return false;
     }
 
@@ -72,7 +82,7 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({ user, token, onProfi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
@@ -80,40 +90,35 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({ user, token, onProfi
     setSuccess(null);
 
     try {
-      const updateData: any = {
+      const updateData: ProfileUpdateData = {
         username: formData.username,
-        email: formData.email
+        email: formData.email,
       };
 
       if (formData.newPassword) {
         updateData.password = formData.newPassword;
       }
 
-      const response = await fetch('/api/auth/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updateData),
-      });
+      const response = await authService.updateProfile(updateData);
 
-      const data = await response.json();
-
-      if (data.success) {
-        onProfileUpdate(data.user);
-        setSuccess('Profile updated successfully');
-        setFormData(prev => ({
+      if (response.success && response.data) {
+        onProfileUpdate(response.data);
+        setSuccess("Profile updated successfully");
+        setFormData((prev) => ({
           ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
         }));
       } else {
-        setError(data.error || 'Update failed');
+        setError(response.error || "Update failed");
       }
     } catch (err) {
-      setError('Network error. Please try again.');
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError("Network error. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -126,9 +131,7 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({ user, token, onProfi
           <User className="h-6 w-6" />
           Admin Profile
         </CardTitle>
-        <CardDescription>
-          Update your admin account information
-        </CardDescription>
+        <CardDescription>Update your admin account information</CardDescription>
       </CardHeader>
 
       <CardContent>
@@ -148,7 +151,7 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({ user, token, onProfi
 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Basic Information</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="username">Username</Label>
@@ -182,8 +185,10 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({ user, token, onProfi
 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Change Password</h3>
-            <p className="text-sm text-gray-600">Leave password fields empty if you don't want to change your password.</p>
-            
+            <p className="text-sm text-gray-600">
+              Leave password fields empty if you don't want to change your password.
+            </p>
+
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="newPassword">New Password</Label>
@@ -214,11 +219,7 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({ user, token, onProfi
           </div>
 
           <div className="flex justify-end">
-            <Button 
-              type="submit" 
-              disabled={loading}
-              className="flex items-center gap-2"
-            >
+            <Button type="submit" disabled={loading} className="flex items-center gap-2">
               <Save className="h-4 w-4" />
               {loading ? "Updating..." : "Update Profile"}
             </Button>
@@ -227,4 +228,4 @@ export const AdminProfile: React.FC<AdminProfileProps> = ({ user, token, onProfi
       </CardContent>
     </Card>
   );
-}; 
+};
