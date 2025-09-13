@@ -72,6 +72,13 @@ export interface SendEmailData {
 }
 
 // Google Workspace Configuration
+export interface GoogleIntegrationStatus {
+  success: boolean;
+  isIntegrated: boolean;
+  email: string;
+  lastUpdated: string;
+}
+
 export interface GoogleWorkspaceConfig {
   id?: number;
   business_id: number;
@@ -86,7 +93,7 @@ export interface GoogleWorkspaceConfig {
   error_message?: string;
 }
 
-// Enhanced Google Service
+// Google Service
 export class GoogleService {
   // Google Workspace Configuration
   static async getGoogleConfig(businessId: number): Promise<ApiResponse<GoogleWorkspaceConfig>> {
