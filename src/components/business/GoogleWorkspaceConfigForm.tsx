@@ -90,22 +90,20 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
       setLoading(true);
       setError(null);
 
-      // Get OAuth URL from backend
-      const response = await GoogleService.getAuthUrl(businessId);
+      // Get OAuth URL directly from the API
+      const response = await fetch(`/api/google/auth/${businessId}`);
+      const data = await response.json();
 
-      console.log("OAuth response:", response); // Debug log
+      console.log("OAuth response:", data); // Debug log
 
-      // Handle both possible response structures
-      const authUrl = response.data.authUrl;
-
-      if (response.success && authUrl) {
+      if (data.success && data.authUrl) {
         // Calculate center position
-        const left = screen.width / 2 - 250; // 250 is half of popup width (500/2)
-        const top = screen.height / 2 - 300; // 300 is half of popup height (600/2)
+        const left = screen.width / 2 - 250;
+        const top = screen.height / 2 - 300;
 
         // Open OAuth URL in a popup window (centered)
         const popup = window.open(
-          authUrl,
+          data.authUrl,
           "google-oauth",
           `width=500,height=600,scrollbars=yes,resizable=yes,left=${left},top=${top}`
         );
@@ -217,7 +215,9 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
                 )}
               </div>
               {integrationStatus.email && (
-                <p className="text-sm text-muted-foreground">Connected as: {integrationStatus.email}</p>
+                <p className="text-sm text-muted-foreground">
+                  Connected as: <span className="text-primary">{integrationStatus.email}</span>
+                </p>
               )}
               {integrationStatus.lastUpdated && (
                 <p className="text-sm text-muted-foreground">
@@ -263,22 +263,18 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex justify-start gap-2">
+                  <Button onClick={handleRemoveIntegration} disabled={loading} variant="destructive" size="sm">
+                    {loading ? "Disconnecting..." : "Disconnect"}
+                  </Button>
                   <Button
                     onClick={handleGoogleAuth}
                     disabled={loading}
                     variant="outline"
                     size="sm"
+                    className="bg-primary hover:bg-primary/90 text-white hover:text-white"
                   >
                     {loading ? "Reconnecting..." : "Reconnect"}
-                  </Button>
-                  <Button
-                    onClick={handleRemoveIntegration}
-                    disabled={loading}
-                    variant="destructive"
-                    size="sm"
-                  >
-                    {loading ? "Removing..." : "Remove Integration"}
                   </Button>
                 </div>
               </div>
