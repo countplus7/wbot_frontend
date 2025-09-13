@@ -81,9 +81,28 @@ export const GoogleWorkspaceConfigForm: React.FC<GoogleWorkspaceConfigFormProps>
       setLoading(true);
       setError(null);
 
-      // For now, we'll show a message that manual configuration is required
-      // In a real implementation, this would redirect to Google OAuth
-      setError("Google OAuth integration requires manual configuration. Please contact your administrator.");
+      // Get OAuth URL from backend
+      const response = await GoogleService.getAuthUrl(businessId);
+
+      if (response.success && response.data?.authUrl) {
+        // Open OAuth URL in a popup window
+        const popup = window.open(
+          response.data.authUrl,
+          "google-oauth",
+          "width=500,height=600,scrollbars=yes,resizable=yes"
+        );
+
+        // Listen for OAuth completion
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            // Refresh integration status after OAuth completion
+            fetchIntegrationStatus();
+          }
+        }, 1000);
+      } else {
+        setError("Failed to get Google OAuth URL");
+      }
     } catch (err) {
       console.error("Error initiating Google auth:", err);
       setError("Failed to initiate Google authentication");
