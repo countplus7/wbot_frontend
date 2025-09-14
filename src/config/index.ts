@@ -48,23 +48,6 @@ export const API_ENDPOINTS = {
     GET: (id: number) => `/basic/businesses/${id}`,
   },
 
-  GOOGLE: {
-    CALENDAR: {
-      LIST: (businessId: number) => `/google/calendar/events/${businessId}`,
-      CREATE: (businessId: number) => `/google/calendar/event/${businessId}`,
-      UPDATE: (businessId: number, eventId: string) => `/google/calendar/event/${businessId}/${eventId}`,
-      DELETE: (businessId: number, eventId: string) => `/google/calendar/event/${businessId}/${eventId}`,
-      UPCOMING: (businessId: number) => `/google/calendar/upcoming/${businessId}`,
-      SEARCH: (businessId: number) => `/google/calendar/search/${businessId}`,
-    },
-    EMAIL: {
-      SEND: (businessId: number) => `/google/email/send/${businessId}`,
-      LIST: (businessId: number) => `/google/emails/${businessId}`,
-      UNREAD: (businessId: number) => `/google/emails/unread/${businessId}`,
-      SEARCH: (businessId: number) => `/google/emails/search/${businessId}`,
-    },
-  },
-
   WHATSAPP: {
     WEBHOOK: "/webhook",
     CONFIG: (businessId: number) => `/basic/businesses/${businessId}/whatsapp`,
