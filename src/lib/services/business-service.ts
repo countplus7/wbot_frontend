@@ -67,7 +67,7 @@ export interface Message {
   media_url?: string;
   file_name?: string;
   file_type?: string;
-  timestamp: string;
+  created_at: string;
   status: "sent" | "delivered" | "read" | "failed";
 }
 
@@ -155,13 +155,11 @@ export class BusinessService {
     if (params?.status) queryParams.append("status", params.status);
 
     const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
-    
+
     // The API returns { success: true, data: [...], count: 1 }
     // But we need to transform it to { success: true, data: { conversations: [...], total: 1, page: 1, limit: 10 } }
-    const response = await apiClient.get<Conversation[]>(
-      `/basic/businesses/${businessId}/conversations${query}`
-    );
-    
+    const response = await apiClient.get<Conversation[]>(`/basic/businesses/${businessId}/conversations${query}`);
+
     if (response.success && response.data) {
       // Transform the response to match expected structure
       return {
@@ -170,11 +168,11 @@ export class BusinessService {
           conversations: response.data,
           total: response.count || response.data.length,
           page: params?.page || 1,
-          limit: params?.limit || 10
-        }
+          limit: params?.limit || 10,
+        },
       };
     }
-    
+
     return response as any; // Return original response if not successful
   }
 
