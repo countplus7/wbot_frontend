@@ -48,6 +48,12 @@ export const API_ENDPOINTS = {
     GET: (id: number) => `/basic/businesses/${id}`,
   },
 
+  GOOGLE: {
+    CONFIG: (businessId: number) => `/google/config/${businessId}`,
+    AUTH: (businessId: number) => `/google/auth/${businessId}`,
+    TEST: (businessId: number) => `/google/test/${businessId}`,
+  },
+
   WHATSAPP: {
     WEBHOOK: "/webhook",
     CONFIG: (businessId: number) => `/basic/businesses/${businessId}/whatsapp`,
