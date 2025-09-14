@@ -8,6 +8,7 @@ export interface ApiResponse<T = any> {
   message?: string;
   code?: string;
   timestamp?: string;
+  count?: number; // Add count property for pagination
 }
 
 // API Error class
