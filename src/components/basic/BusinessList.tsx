@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useBusinesses, useDeleteBusiness, useBusinessTones } from "@/hooks/use-businesses";
+import { useBusinesses, useDeleteBusiness, useBusinessTones, businessKeys } from "@/hooks/use-businesses";
+import { useQueryClient } from "@tanstack/react-query";
 import { BusinessForm } from "./BusinessForm";
 import { WhatsAppForm } from "./WhatsAppForm";
 import { BusinessToneForm } from "./BusinessToneForm";
@@ -36,6 +37,7 @@ export const BusinessList: React.FC = () => {
 
   const { data: businesses = [], isLoading, error } = useBusinesses();
   const deleteBusiness = useDeleteBusiness();
+  const queryClient = useQueryClient();
 
   // Only call the hook when tone modal is opened
   const { data: existingTones = [], isLoading: tonesLoading } = useBusinessTones(
@@ -118,6 +120,12 @@ export const BusinessList: React.FC = () => {
     setSelectedBusiness(null);
   };
 
+  // Custom success handler that invalidates cache and closes form
+  const handleFormSuccess = () => {
+    // Invalidate the businesses query to refresh the data
+    queryClient.invalidateQueries({ queryKey: businessKeys.lists() });
+  };
+
   const confirmDelete = async () => {
     if (businessToDelete) {
       await deleteBusiness.mutateAsync(businessToDelete.id);
@@ -128,19 +136,36 @@ export const BusinessList: React.FC = () => {
   const renderForm = () => {
     switch (formType) {
       case "business":
-        return <BusinessForm business={selectedBusiness} onSuccess={closeForm} onCancel={closeForm} />;
+        return <BusinessForm business={selectedBusiness} onSuccess={handleFormSuccess} onCancel={closeForm} />;
       case "whatsapp":
-        return <WhatsAppForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
+        return (
+          <WhatsAppForm businessId={selectedBusiness?.id || 0} onSuccess={handleFormSuccess} onCancel={closeForm} />
+        );
       case "tone":
-        return <BusinessToneForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
+        return (
+          <BusinessToneForm businessId={selectedBusiness?.id || 0} onSuccess={handleFormSuccess} onCancel={closeForm} />
+        );
       case "google":
         return (
-          <GoogleWorkspaceForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />
+          <GoogleWorkspaceForm
+            businessId={selectedBusiness?.id || 0}
+            onSuccess={handleFormSuccess}
+            onCancel={closeForm}
+          />
         );
       case "salesforce":
-        return <SalesforceForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
+        return (
+          <SalesforceForm businessId={selectedBusiness?.id || 0} onSuccess={handleFormSuccess} onCancel={closeForm} />
+        );
       case "odoo":
-        return <OdooForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
+        return (
+          <OdooForm
+            key={`odoo-${selectedBusiness?.id}`}
+            businessId={selectedBusiness?.id || 0}
+            onSuccess={handleFormSuccess}
+            onCancel={closeForm}
+          />
+        );
       case "chat-history":
         return <ChatHistory businessId={selectedBusiness?.id || 0} businessName={selectedBusiness?.name || ""} />;
       default:

@@ -5,8 +5,18 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { CheckCircle, Trash2, AlertCircle, Users, Building, TrendingUp, FileText, Database, Save, TestTube } from "lucide-react";
+import {
+  CheckCircle,
+  Trash2,
+  AlertCircle,
+  Users,
+  Building,
+  TrendingUp,
+  FileText,
+  Database,
+  Save,
+  TestTube,
+} from "lucide-react";
 import { OdooService, type OdooConfig, type OdooIntegrationStatus } from "@/lib/services/odoo-service";
 
 interface OdooFormProps {
@@ -44,10 +54,13 @@ export const OdooForm: React.FC<OdooFormProps> = ({ businessId, onSuccess, onCan
       setLoading(true);
       setError(null);
 
+      console.log("Fetching Odoo integration status for businessId:", businessId);
       const response = await OdooService.getConfig(businessId);
-      
+      console.log("Odoo integration response:", response);
+
       if (response.success && response.data?.isIntegrated) {
         const data = response.data;
+        console.log("Setting integration status to integrated:", data);
         const newStatus = {
           isIntegrated: data.isIntegrated,
           instance_url: data.instance_url,
@@ -71,6 +84,7 @@ export const OdooForm: React.FC<OdooFormProps> = ({ businessId, onSuccess, onCan
           api_key: "",
         });
       } else {
+        console.log("Setting integration status to not integrated");
         setIntegrationStatus({ isIntegrated: false });
       }
     } catch (err) {
@@ -83,30 +97,31 @@ export const OdooForm: React.FC<OdooFormProps> = ({ businessId, onSuccess, onCan
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     setError(null);
     setSuccess(null);
   };
 
   const validateForm = () => {
     const { instance_url, db, username, api_key } = formData;
-    
+
     if (!instance_url.trim()) {
       setError("Instance URL is required");
       return false;
     }
-    
+
     if (!db.trim()) {
       setError("Database name is required");
       return false;
     }
-    
+
     if (!username.trim()) {
       setError("Username is required");
       return false;
     }
-    
-    if (!api_key.trim()) {
+
+    // Only require API key if we don't have an existing integration
+    if (!integrationStatus.isIntegrated && !api_key.trim()) {
       setError("API Key is required");
       return false;
     }
@@ -132,12 +147,12 @@ export const OdooForm: React.FC<OdooFormProps> = ({ businessId, onSuccess, onCan
 
       // Save the configuration first
       await OdooService.saveConfig(businessId, formData);
-      
+
       // Then test the connection
       const response = await OdooService.testConnection(businessId);
-      
+
       if (response.success) {
-        setSuccess(`Connection successful! User ID: ${response.data?.userId}`);
+        setSuccess("Connection successful!");
         fetchIntegrationStatus();
       } else {
         setError("Connection test failed");
@@ -200,8 +215,14 @@ export const OdooForm: React.FC<OdooFormProps> = ({ businessId, onSuccess, onCan
   };
 
   useEffect(() => {
+    console.log("OdooForm useEffect triggered, businessId:", businessId);
     fetchIntegrationStatus();
   }, [businessId]);
+
+  // Add debugging for state changes
+  useEffect(() => {
+    console.log("Integration status changed:", integrationStatus);
+  }, [integrationStatus]);
 
   if (loading) {
     return (
@@ -299,141 +320,78 @@ export const OdooForm: React.FC<OdooFormProps> = ({ businessId, onSuccess, onCan
         </div>
 
         {/* Configuration Form */}
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-secondary/5 to-accent/5 rounded-xl p-6 border border-border/30">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Odoo Configuration</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="instance_url" className="text-sm font-medium">
-                  Instance URL *
-                </Label>
-                <Input
-                  id="instance_url"
-                  type="url"
-                  placeholder="https://your-company.odoo.com"
-                  value={formData.instance_url}
-                  onChange={(e) => handleInputChange("instance_url", e.target.value)}
-                  className="bg-background"
-                />
+        {!integrationStatus.isIntegrated && (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-secondary/5 to-accent/5 rounded-xl p-6 border border-border/30">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Odoo Configuration</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="instance_url" className="text-sm font-medium">
+                    Instance URL *
+                  </Label>
+                  <Input
+                    id="instance_url"
+                    type="url"
+                    placeholder="https://your-company.odoo.com"
+                    value={formData.instance_url}
+                    onChange={(e) => handleInputChange("instance_url", e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="db" className="text-sm font-medium">
+                    Database Name *
+                  </Label>
+                  <Input
+                    id="db"
+                    type="text"
+                    placeholder="your-database-name"
+                    value={formData.db}
+                    onChange={(e) => handleInputChange("db", e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="username" className="text-sm font-medium">
+                    Username *
+                  </Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="admin@yourcompany.com"
+                    value={formData.username}
+                    onChange={(e) => handleInputChange("username", e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="api_key" className="text-sm font-medium">
+                    API Key *
+                  </Label>
+                  <Input
+                    id="api_key"
+                    type="password"
+                    placeholder="Your API Key"
+                    value={formData.api_key}
+                    onChange={(e) => handleInputChange("api_key", e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="db" className="text-sm font-medium">
-                  Database Name *
-                </Label>
-                <Input
-                  id="db"
-                  type="text"
-                  placeholder="your-database-name"
-                  value={formData.db}
-                  onChange={(e) => handleInputChange("db", e.target.value)}
-                  className="bg-background"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium">
-                  Username *
-                </Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="admin@yourcompany.com"
-                  value={formData.username}
-                  onChange={(e) => handleInputChange("username", e.target.value)}
-                  className="bg-background"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="api_key" className="text-sm font-medium">
-                  API Key *
-                </Label>
-                <Input
-                  id="api_key"
-                  type="password"
-                  placeholder="Your API Key"
-                  value={formData.api_key}
-                  onChange={(e) => handleInputChange("api_key", e.target.value)}
-                  className="bg-background"
-                />
+              <div className="mt-6 text-sm text-muted-foreground">
+                <p>* All fields are required. You can generate an API key from your Odoo user preferences.</p>
               </div>
             </div>
-
-            <div className="mt-6 text-sm text-muted-foreground">
-              <p>* All fields are required. You can generate an API key from your Odoo user preferences.</p>
-            </div>
           </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
-              onClick={handleTestConnection}
-              disabled={testing || saving}
-              variant="outline"
-              size="lg"
-              className="flex-1"
-            >
-              {testing ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
-                  Testing Connection...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <TestTube className="h-4 w-4" />
-                  Test Connection
-                </div>
-              )}
-            </Button>
-
-            <Button
-              onClick={handleSaveConfig}
-              disabled={saving || testing}
-              size="lg"
-              className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
-            >
-              {saving ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Saving...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Save className="h-4 w-4" />
-                  Save Configuration
-                </div>
-              )}
-            </Button>
-
-            {integrationStatus.isIntegrated && (
-              <Button
-                onClick={handleRemoveIntegration}
-                disabled={deleting}
-                variant="destructive"
-                size="lg"
-                className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                {deleting ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Removing...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Trash2 className="h-4 w-4" />
-                    Remove Integration
-                  </div>
-                )}
-              </Button>
-            )}
-          </div>
-        </div>
+        )}
 
         {/* Services Section */}
         {integrationStatus.isIntegrated && (
           <div className="space-y-6">
-            <Separator />
             <div className="bg-gradient-to-br from-secondary/5 to-accent/5 rounded-xl p-6 border border-border/30">
               <h3 className="text-lg font-semibold text-foreground mb-4">Available Services</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -477,7 +435,7 @@ export const OdooForm: React.FC<OdooFormProps> = ({ businessId, onSuccess, onCan
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 col-span-1 md:col-span-2">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
                   <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
                     <Database className="h-5 w-5 text-white" />
                   </div>
@@ -490,6 +448,69 @@ export const OdooForm: React.FC<OdooFormProps> = ({ businessId, onSuccess, onCan
             </div>
           </div>
         )}
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {integrationStatus.isIntegrated ? (
+            <Button
+              onClick={handleRemoveIntegration}
+              disabled={deleting}
+              variant="destructive"
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              {deleting ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Removing...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Remove Integration
+                </div>
+              )}
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSaveConfig}
+              disabled={saving || testing}
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              {saving ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Saving...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  Save Configuration
+                </div>
+              )}
+            </Button>
+          )}
+
+          {/* <Button
+            onClick={handleTestConnection}
+            disabled={testing || saving}
+            variant="outline"
+            size="lg"
+            className="flex-1"
+          >
+            {testing ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                Testing Connection...
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <TestTube className="h-4 w-4" />
+                Test Connection
+              </div>
+            )}
+          </Button> */}
+        </div>
       </CardContent>
     </Card>
   );
