@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -85,20 +85,16 @@ export const SalesforceForm: React.FC<SalesforceFormProps> = ({ businessId, onSu
       setLoading(true);
       setError(null);
 
-      // Get OAuth URL directly from the API
-      const response = await fetch("/api/salesforce/auth/");
-      const data = await response.json();
+      const response = await SalesforceService.getAuthUrl(businessId);
+      if (response.success && response.data) {
+        const { authUrl } = response.data;
 
-      console.log("OAuth response:", data); // Debug log
-
-      if (data.success && data.authUrl) {
         // Calculate center position
         const left = screen.width / 2 - 250;
         const top = screen.height / 2 - 300;
 
-        // Open OAuth URL in a popup window (centered)
         const popup = window.open(
-          data.authUrl,
+          authUrl,
           "google-oauth",
           `width=500,height=600,scrollbars=yes,resizable=yes,left=${left},top=${top}`
         );
@@ -148,195 +144,215 @@ export const SalesforceForm: React.FC<SalesforceFormProps> = ({ businessId, onSu
 
   return (
     <div className="space-y-8 p-6">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-gray-900">Salesforce Integration</h2>
-        <p className="text-gray-600">
-          Connect your Salesforce CRM to manage leads, contacts, accounts, opportunities, and cases
-        </p>
-      </div>
+      <Card className="shadow-xl border-0 bg-gradient-to-br from-card via-card/95 to-accent/5 backdrop-blur-sm">
+        <CardHeader className="pb-6 border-b border-border/50">
+          <CardTitle className="flex items-center gap-3 text-xl font-semibold">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+              <Building className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <span className="text-foreground">Salesforce Integration</span>
+              <CardDescription className="mt-2 text-muted-foreground">
+                Connect your Salesforce CRM to enable lead management, contact tracking, and more.
+              </CardDescription>
+            </div>
+          </CardTitle>
+        </CardHeader>
 
-      {/* Error Alert */}
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        <CardContent className="space-y-6 pt-6">
+          {error && (
+            <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-destructive font-medium">{error}</AlertDescription>
+            </Alert>
+          )}
 
-      {/* Integration Status */}
-      {integrationStatus.isIntegrated ? (
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
+          {/* Integration Status Section */}
+          <div className="bg-gradient-to-r from-accent/10 to-secondary/10 rounded-xl p-6 border border-border/50">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <CardTitle className="text-green-800">Salesforce Connected</CardTitle>
-              </div>
-              <Badge variant="secondary" className="bg-green-100 text-green-800">
-                Active
-              </Badge>
-            </div>
-            <CardDescription className="text-green-700">
-              Your Salesforce CRM is successfully connected and ready to use.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Connection Details */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Username</label>
-                <p className="text-sm text-gray-900">{integrationStatus.username}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Email</label>
-                <p className="text-sm text-gray-900">{integrationStatus.email}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Instance URL</label>
-                <p className="text-sm text-gray-900 break-all">{integrationStatus.instance_url}</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Last Updated</label>
-                <p className="text-sm text-gray-900">
-                  {integrationStatus.lastUpdated ? new Date(integrationStatus.lastUpdated).toLocaleString() : "Unknown"}
-                </p>
-              </div>
-            </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="font-semibold text-lg text-foreground">Integration Status</span>
+                  {integrationStatus.isIntegrated ? (
+                    <Badge className="bg-primary text-white border-0 px-3 py-1">
+                      <CheckCircle className="h-3 w-3 mr-2" />
+                      Connected
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="px-3 py-1 bg-muted/50 text-muted-foreground">
+                      Not Connected
+                    </Badge>
+                  )}
+                </div>
 
-            <Separator />
+                {integrationStatus.email && (
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    <span className="text-sm text-muted-foreground">Connected as:</span>
+                    <span className="text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md">
+                      {integrationStatus.email}
+                    </span>
+                  </div>
+                )}
 
-            {/* Available Services */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">Available Services</h4>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-gray-700">Leads</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Users className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-gray-700">Contacts</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Building className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-gray-700">Accounts</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-gray-700">Opportunities</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <FileText className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-gray-700">Cases</span>
-                </div>
+                {integrationStatus.username && (
+                  <div className="flex items-center gap-2">
+                    <Building className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Username:</span>
+                    <span className="text-sm font-semibold text-foreground">{integrationStatus.username}</span>
+                  </div>
+                )}
+
+                {integrationStatus.lastUpdated && (
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Last updated: {new Date(integrationStatus.lastUpdated).toLocaleString()}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
+          </div>
 
-            <Separator />
+          {/* Services Section */}
+          <div className="space-y-6">
+            {integrationStatus.isIntegrated ? (
+              <div className="space-y-6">
+                {/* Available Services Grid */}
+                <div className="bg-gradient-to-br from-secondary/5 to-accent/5 rounded-xl p-6 border border-border/30">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Available Services</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <Users className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-medium text-foreground">Leads</span>
+                        <Badge className="ml-2 bg-primary text-white border-0 text-xs">Available</Badge>
+                      </div>
+                    </div>
 
-            {/* Actions */}
-            <div className="flex space-x-3">
-              <Button
-                variant="outline"
-                onClick={handleRemoveIntegration}
-                disabled={disLoading}
-                className="text-red-600 border-red-200 hover:bg-red-50"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                {disLoading ? "Removing..." : "Remove Integration"}
-              </Button>
-              <Button variant="outline" onClick={fetchIntegrationStatus} disabled={loading}>
-                {loading ? "Refreshing..." : "Refresh Status"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Connect to Salesforce</CardTitle>
-            <CardDescription>
-              Connect your Salesforce CRM to enable lead management, contact tracking, and more.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Features */}
-            <div>
-              <h4 className="text-sm font-medium text-gray-700 mb-3">What you'll get:</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-start space-x-3">
-                  <Users className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h5 className="text-sm font-medium text-gray-900">Lead Management</h5>
-                    <p className="text-xs text-gray-600">Create, update, and track leads from WhatsApp conversations</p>
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <Users className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-medium text-foreground">Contacts</span>
+                        <Badge className="ml-2 bg-primary text-white border-0 text-xs">Available</Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <Building className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-medium text-foreground">Accounts</span>
+                        <Badge className="ml-2 bg-primary text-white border-0 text-xs">Available</Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <TrendingUp className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-medium text-foreground">Opportunities</span>
+                        <Badge className="ml-2 bg-primary text-white border-0 text-xs">Available</Badge>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20 col-span-1 md:col-span-2">
+                      <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <span className="font-medium text-foreground">Cases</span>
+                        <Badge className="ml-2 bg-primary text-white border-0 text-xs">Available</Badge>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-start space-x-3">
-                  <Users className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h5 className="text-sm font-medium text-gray-900">Contact Management</h5>
-                    <p className="text-xs text-gray-600">Sync contact information and communication history</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <Building className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h5 className="text-sm font-medium text-gray-900">Account Management</h5>
-                    <p className="text-xs text-gray-600">Manage company accounts and relationships</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <TrendingUp className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h5 className="text-sm font-medium text-gray-900">Opportunity Tracking</h5>
-                    <p className="text-xs text-gray-600">Track sales opportunities and pipeline</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <FileText className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div>
-                    <h5 className="text-sm font-medium text-gray-900">Case Management</h5>
-                    <p className="text-xs text-gray-600">Create and manage support cases</p>
-                  </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <Button
+                    onClick={handleRemoveIntegration}
+                    disabled={disLoading}
+                    variant="destructive"
+                    size="lg"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    {disLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Disconnecting...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Trash2 className="h-4 w-4" />
+                        Disconnect
+                      </div>
+                    )}
+                  </Button>
+
+                  <Button
+                    onClick={handleSalesforceAuth}
+                    disabled={loading}
+                    size="lg"
+                    className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Reconnecting...
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <ExternalLink className="h-4 w-4" />
+                        Reconnect
+                      </div>
+                    )}
+                  </Button>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-center space-y-6 py-8">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto">
+                  <Building className="w-10 h-10 text-primary" />
+                </div>
 
-            <Separator />
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold text-foreground">Connect Salesforce</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Connect your Salesforce CRM to start using lead management, contact tracking, and more.
+                  </p>
+                </div>
 
-            {/* Connect Button */}
-            <div className="text-center">
-              <Button
-                onClick={handleSalesforceAuth}
-                disabled={loading}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                size="lg"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                {loading ? "Connecting..." : "Connect to Salesforce"}
-              </Button>
-              <p className="text-xs text-gray-500 mt-2">
-                You'll be redirected to Salesforce to authorize the connection
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-3">
-        {onCancel && (
-          <Button variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-        )}
-        {onSuccess && integrationStatus.isIntegrated && (
-          <Button onClick={onSuccess} className="bg-blue-600 hover:bg-blue-700">
-            Done
-          </Button>
-        )}
-      </div>
+                <Button
+                  onClick={handleSalesforceAuth}
+                  disabled={loading}
+                  size="lg"
+                  className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200 px-8"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Connecting...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <ExternalLink className="h-4 w-4" />
+                      Connect Salesforce
+                    </div>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
