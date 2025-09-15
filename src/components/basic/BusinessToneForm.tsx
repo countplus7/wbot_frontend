@@ -134,7 +134,7 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Disable all form fields when submitting */}
-        <fieldset disabled={isSubmitting}>
+        <fieldset disabled={isSubmitting} className="space-y-6">
           <FormField
             control={form.control}
             name="tone_name"
@@ -154,9 +154,9 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
             name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Description</FormLabel>
+                <FormLabel>Description (optional)</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter tone description (optional)" {...field} disabled={isSubmitting} />
+                  <Input placeholder="Enter tone description" {...field} disabled={isSubmitting} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

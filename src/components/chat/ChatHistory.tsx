@@ -213,10 +213,10 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
   };
 
   return (
-    <div className="h-full flex gap-6 px-6 bg-gradient-to-br from-secondary/10 via-background to-accent/10">
+    <div className="flex gap-6 overflow-hidden">
       {/* Conversations List */}
-      <div className="w-[380px] min-w-[360px]">
-        <Card className="h-full shadow-lg border-0 bg-gradient-to-b from-card to-card/90 backdrop-blur-sm">
+      <div className="w-[350px]">
+        <Card>
           <CardHeader className="pb-4 border-b border-border/50">
             <CardTitle className="flex items-center gap-3 text-lg font-semibold">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -226,7 +226,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <ScrollArea className="h-[calc(100vh-220px)]">
+            <ScrollArea className="h-[80vh]">
               {conversationsLoading ? (
                 <div className="flex flex-col items-center justify-center py-16 px-6">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -244,14 +244,14 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
                 </div>
               ) : (
                 <div className="divide-y divide-border/50">
-                  {conversationsData?.conversations?.map((conversation) => (
+                  {conversationsData?.conversations?.map((conversation, index) => (
                     <div
                       key={conversation.id}
                       className={`p-4 cursor-pointer transition-all duration-200 hover:bg-accent/50 relative group ${
                         selectedConversationId === conversation.id
                           ? "bg-primary/5 border-r-4 border-primary shadow-sm"
                           : "hover:shadow-sm"
-                      }`}
+                      } ${index === conversationsData?.conversations.length - 1 ? "mb-24" : ""}`}
                       onClick={() => {
                         setSelectedConversationId(conversation.id);
                         loadConversationMessages(conversation.id);
@@ -288,7 +288,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
                           </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
                         <Calendar className="w-3 h-3" />
                         <span>
                           {conversation.last_message_at
@@ -307,7 +307,7 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
 
       {/* Messages View */}
       <div className="flex-1">
-        <Card className="h-full shadow-lg border-0 bg-gradient-to-b from-card to-card/90 backdrop-blur-sm">
+        <Card className="w-full">
           <CardHeader className="pb-4 border-b border-border/50">
             <CardTitle>
               {selectedConversationId ? (
@@ -327,8 +327,8 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
               )}
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-0 bg-gradient-to-b from-accent/5 to-secondary/5">
-            <ScrollArea className="h-[calc(100vh-220px)]">
+          <CardContent className="p-0">
+            <ScrollArea className="h-[80vh]">
               {!selectedConversationId ? (
                 <div className="flex flex-col items-center justify-center py-24 px-6">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center mb-6">
@@ -359,14 +359,14 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
                     <div
                       key={message.id}
                       className={`flex gap-4 ${message.direction === "inbound" ? "justify-start" : "justify-end"} ${
-                        index === messages.length - 1 ? "pb-12" : ""
+                        index === messages.length - 1 ? "pb-24" : ""
                       }`}
                     >
                       <div
-                        className={`max-w-[60%] min-w-[150px] rounded-xl px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
+                        className={`max-w-[60%] min-w-[200px] rounded-xl px-4 py-3 ${
                           message.direction === "inbound"
-                            ? "bg-gradient-to-br from-accent/80 to-accent/60 text-accent-foreground"
-                            : "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground"
+                            ? "bg-primary/10 text-accent-foreground rounded-tl-none rounded-tr-xl rounded-br-xl rounded-bl-xl"
+                            : "bg-primary/90 text-primary-foreground rounded-tl-xl rounded-tr-none rounded-br-xl rounded-bl-xl"
                         }`}
                       >
                         <div className="flex items-center gap-2 mb-2 opacity-80">

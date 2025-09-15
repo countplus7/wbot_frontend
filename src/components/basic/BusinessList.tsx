@@ -255,23 +255,27 @@ export const BusinessList: React.FC = () => {
 
       {/* Form Dialog */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          className={`${
+            formType === "chat-history" ? "max-w-[95vw] w-[95vw] h-[95vh]" : "max-w-4xl"
+          } max-h-[90vh] overflow-y-auto`}
+        >
           <DialogHeader>
             <DialogTitle>
               {formType === "business" && (selectedBusiness ? "Edit Business" : "Create Business")}
               {formType === "whatsapp" && "WhatsApp Configuration"}
               {formType === "tone" && "Business Tone Configuration"}
+              {formType === "chat-history" && "Chat History"}
               {formType === "google" && "Google Workspace Integration"}
               {formType === "salesforce" && "Salesforce Integration"}
-              {formType === "chat-history" && "Chat History"}
             </DialogTitle>
             <DialogDescription>
               {formType === "business" && "Configure your business details"}
               {formType === "whatsapp" && "Set up WhatsApp integration for this business"}
               {formType === "tone" && "Configure the tone and personality for this business"}
+              {formType === "chat-history" && "View and manage chat history for this business"}
               {formType === "google" && "Connect your Google Workspace account"}
               {formType === "salesforce" && "Connect your Salesforce CRM"}
-              {formType === "chat-history" && "View conversation history for this business"}
             </DialogDescription>
           </DialogHeader>
           {renderForm()}
