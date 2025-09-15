@@ -44,7 +44,7 @@ export const SalesforceForm: React.FC<SalesforceFormProps> = ({ businessId, onSu
       setError(null);
 
       // Get integration status directly from the API
-      const response = await fetch("/api/salesforce/config/");
+      const response = await fetch(`/api/salesforce/config/${businessId}`);
       const data: SalesforceIntegrationStatus = await response.json();
 
       console.log("fetchIntegrationStatus response:", data); // Debug log
