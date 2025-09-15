@@ -10,6 +10,7 @@ import { WhatsAppForm } from "./WhatsAppForm";
 import { BusinessToneForm } from "./BusinessToneForm";
 import { GoogleWorkspaceForm } from "../integration/GoogleWorkspaceForm";
 import { SalesforceForm } from "../integration/SalesforceForm";
+import { OdooForm } from "../integration/OdooForm";
 import { ChatHistory } from "../chat/ChatHistory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Business } from "@/lib/services/business-service";
 
-type FormType = "business" | "whatsapp" | "tone" | "chat-history" | "google" | "salesforce" | null;
+type FormType = "business" | "whatsapp" | "tone" | "chat-history" | "google" | "salesforce" | "odoo" | null;
 
 export const BusinessList: React.FC = () => {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -95,6 +96,12 @@ export const BusinessList: React.FC = () => {
     setIsFormOpen(true);
   };
 
+  const handleOdooConfig = (business: Business) => {
+    setSelectedBusiness(business);
+    setFormType("odoo");
+    setIsFormOpen(true);
+  };
+
   const handleChatHistory = (business: Business) => {
     setSelectedBusiness(business);
     setFormType("chat-history");
@@ -132,6 +139,8 @@ export const BusinessList: React.FC = () => {
         );
       case "salesforce":
         return <SalesforceForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
+      case "odoo":
+        return <OdooForm businessId={selectedBusiness?.id || 0} onSuccess={closeForm} onCancel={closeForm} />;
       case "chat-history":
         return <ChatHistory businessId={selectedBusiness?.id || 0} businessName={selectedBusiness?.name || ""} />;
       default:
@@ -240,6 +249,12 @@ export const BusinessList: React.FC = () => {
                       </div>
                       Salesforce
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleOdooConfig(business)}>
+                      <div className="w-4 h-4 mr-1 bg-primary rounded-sm flex items-center justify-center">
+                        <span className="text-white font-bold text-[10px]">O</span>
+                      </div>
+                      Odoo
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -268,6 +283,7 @@ export const BusinessList: React.FC = () => {
               {formType === "chat-history" && "Chat History"}
               {formType === "google" && "Google Workspace Integration"}
               {formType === "salesforce" && "Salesforce Integration"}
+              {formType === "odoo" && "Odoo Integration"}
             </DialogTitle>
             <DialogDescription>
               {formType === "business" && "Configure your business details"}
@@ -276,6 +292,7 @@ export const BusinessList: React.FC = () => {
               {formType === "chat-history" && "View and manage chat history for this business"}
               {formType === "google" && "Connect your Google Workspace account"}
               {formType === "salesforce" && "Connect your Salesforce CRM"}
+              {formType === "odoo" && "Connect your Odoo ERP system"}
             </DialogDescription>
           </DialogHeader>
           {renderForm()}
