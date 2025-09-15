@@ -144,7 +144,7 @@ export const SalesforceForm: React.FC<SalesforceFormProps> = ({ businessId, onSu
 
   return (
     <div className="space-y-8 p-6">
-      <Card className="shadow-xl border-0 bg-gradient-to-br from-card via-card/95 to-accent/5 backdrop-blur-sm">
+      <Card>
         <CardHeader className="pb-6 border-b border-border/50">
           <CardTitle className="flex items-center gap-3 text-xl font-semibold">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">

@@ -159,11 +159,11 @@ export const BusinessList: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Businesses</h1>
-          <p className="text-muted-foreground">Manage your WhatsApp bot businesses</p>
+        <div className="text-start">
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Manage businesses for your WhatsApp bot.</p>
         </div>
-        <Button onClick={handleCreateBusiness} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={handleCreateBusiness} className="bg-primary text-primary-foreground">
           <Plus className="h-4 w-4 mr-2" />
           Add Business
         </Button>
@@ -190,20 +190,20 @@ export const BusinessList: React.FC = () => {
       ) : (
         <div>
           {filteredBusinesses.map((business) => (
-            <Card key={business.id} className="relative">
-              <CardHeader>
+            <Card key={business.id} className="relative p-4">
+              <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <CardTitle className="text-lg">{business.name}</CardTitle>
                   <Badge variant={business.status ? "default" : "secondary"}>
                     {business.status ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <div className="flex items-start justify-between">
-                  <span className="text-sm">{business.description || "No description"}</span>
-                  <span className="text-sm">Created: {new Date(business.created_at).toLocaleDateString()}</span>
+                <div className="text-start space-y-1">
+                  <p className="text-sm">{business.description || "No description"}</p>
+                  <p className="text-sm">Created: {new Date(business.created_at).toLocaleDateString()}</p>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              </div>
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <p className="mt-5 text-start">Basic Configuration</p>
                   <div className="flex flex-wrap gap-2">
@@ -225,22 +225,24 @@ export const BusinessList: React.FC = () => {
                     </Button>
                   </div>
                 </div>
-                <p className="mt-5 text-start">External System Configuration</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Button size="sm" variant="outline" onClick={() => handleGoogleConfig(business)}>
-                    <div className="w-4 h-4 mr-1 bg-blue-600 rounded-sm flex items-center justify-center">
-                      <span className="text-white font-bold text-[10px]">G</span>
-                    </div>
-                    Google
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => handleSalesforceConfig(business)}>
-                    <div className="w-4 h-4 mr-1 bg-blue-500 rounded-sm flex items-center justify-center">
-                      <span className="text-white font-bold text-[10px]">S</span>
-                    </div>
-                    Salesforce
-                  </Button>
+                <div className="space-y-2">
+                  <p className="mt-5 text-start">External System Configuration</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={() => handleGoogleConfig(business)}>
+                      <div className="w-4 h-4 mr-1 bg-primary rounded-sm flex items-center justify-center">
+                        <span className="text-white font-bold text-[10px]">G</span>
+                      </div>
+                      Google
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleSalesforceConfig(business)}>
+                      <div className="w-4 h-4 mr-1 bg-primary rounded-sm flex items-center justify-center">
+                        <span className="text-white font-bold text-[10px]">S</span>
+                      </div>
+                      Salesforce
+                    </Button>
+                  </div>
                 </div>
-              </CardContent>
+              </div>
               <div className="absolute right-2 top-2">
                 <Button variant="destructive" className="w-8 h-8" onClick={() => handleDeleteBusiness(business)}>
                   <Trash2 className="w-3 h-3" />
