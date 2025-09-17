@@ -246,8 +246,8 @@ export const BusinessList: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <CardTitle className="text-lg">{business.name}</CardTitle>
-                  <Badge variant={business.status ? "default" : "secondary"}>
-                    {business.status ? "Active" : "Inactive"}
+                  <Badge variant={business.status === "active" ? "default" : "secondary"}>
+                    {business.status === "active" ? "Active" : "Inactive"}
                   </Badge>
                 </div>
                 <div className="text-start space-y-1">
