@@ -1,23 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Loader2, CheckCircle, XCircle, ExternalLink, Database, Settings } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface AirtableConfig {
-  id?: number;
-  business_id: number;
-  access_token: string;
-  base_id: string;
-  table_name: string;
-  created_at?: string;
-  updated_at?: string;
-}
+import React, { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  CheckCircle,
+  Trash2,
+  AlertCircle,
+  Database,
+  Save,
+  FileText,
+  Table,
+  MessageSquare,
+  HelpCircle,
+} from "lucide-react";
+import { AirtableService, type AirtableConfig } from "@/lib/services/airtable-service";
 
 interface AirtableFormProps {
   businessId: number;
@@ -26,352 +25,371 @@ interface AirtableFormProps {
 }
 
 export const AirtableForm: React.FC<AirtableFormProps> = ({ businessId, onSuccess, onCancel }) => {
-  const [config, setConfig] = useState<AirtableConfig | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [integrationStatus, setIntegrationStatus] = useState<{
+    isIntegrated: boolean;
+    access_token?: string;
+    base_id?: string;
+    table_name?: string;
+    lastUpdated?: string;
+  }>({ isIntegrated: false });
+
   const [formData, setFormData] = useState({
-    access_token: '',
-    base_id: '',
-    table_name: ''
+    access_token: "",
+    base_id: "",
+    table_name: "",
   });
 
-  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  // Fetch existing configuration
-  useEffect(() => {
-    fetchConfig();
-  }, [businessId]);
-
-  const fetchConfig = async () => {
+  const fetchIntegrationStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/airtable/config/${businessId}`);
-      const data = await response.json();
+      setError(null);
 
-      if (data.success && data.data) {
-        setConfig(data.data);
+      console.log("Fetching Airtable integration status for businessId:", businessId);
+      const response = await AirtableService.getConfig(businessId);
+      console.log("Airtable integration response:", response);
+
+      if (response.success && response.data) {
+        const data = response.data;
+        console.log("Setting integration status to integrated:", data);
+        const newStatus = {
+          isIntegrated: true,
+          access_token: data.access_token ? "••••••••••••••••" : undefined,
+          base_id: data.base_id,
+          table_name: data.table_name,
+          lastUpdated: data.updated_at,
+        };
+
+        setIntegrationStatus(newStatus);
         setFormData({
-          access_token: data.data.access_token || '',
-          base_id: data.data.base_id || '',
-          table_name: data.data.table_name || ''
+          access_token: "",
+          base_id: data.base_id,
+          table_name: data.table_name,
         });
+      } else {
+        console.log("Setting integration status to not integrated");
+        setIntegrationStatus({ isIntegrated: false });
       }
     } catch (err) {
-      console.error('Error fetching Airtable config:', err);
+      console.error("Error fetching integration status:", err);
+      setError("Failed to fetch integration status");
+      setIntegrationStatus({ isIntegrated: false });
     } finally {
       setLoading(false);
     }
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    setError(null);
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const testConnection = async () => {
-    if (!formData.access_token || !formData.base_id || !formData.table_name) {
-      setError('Please fill in all fields before testing');
-      return;
-    }
-
+  const handleSaveConfig = async () => {
     try {
-      setTesting(true);
+      setSaving(true);
       setError(null);
+      setSuccess(null);
 
-      // First save the config temporarily for testing
-      await fetch(`/api/airtable/config/${businessId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      console.log("Saving Airtable configuration:", formData);
+      const response = await AirtableService.saveConfig(businessId, formData);
+      console.log("Save response:", response);
 
-      // Then test the connection
-      const response = await fetch(`/api/airtable/test/${businessId}`, {
-        method: 'POST',
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Connection Successful',
-          description: 'Airtable connection is working properly!',
-        });
+      if (response.success) {
+        setSuccess("Airtable integration configured successfully");
+        await fetchIntegrationStatus();
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
-        setError(data.error || 'Connection test failed');
-        toast({
-          title: 'Connection Failed',
-          description: data.error || 'Unable to connect to Airtable',
-          variant: 'destructive',
-        });
+        setError(response.error || "Failed to save configuration");
       }
-    } catch (err) {
-      const errorMessage = 'Failed to test connection';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+    } catch (err: any) {
+      console.error("Error saving configuration:", err);
+      setError("Failed to save Airtable configuration");
     } finally {
-      setTesting(false);
+      setSaving(false);
     }
   };
 
-  const saveConfig = async () => {
-    if (!formData.access_token || !formData.base_id || !formData.table_name) {
-      setError('Please fill in all required fields');
-      return;
-    }
-
+  const handleRemoveIntegration = async () => {
     try {
-      setLoading(true);
+      setDeleting(true);
       setError(null);
+      setSuccess(null);
 
-      const response = await fetch(`/api/airtable/config/${businessId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      console.log("Removing Airtable integration");
+      const response = await AirtableService.deleteConfig(businessId);
+      console.log("Remove response:", response);
 
-      const data = await response.json();
-
-      if (data.success) {
-        setConfig(data.data);
-        toast({
-          title: 'Configuration Saved',
-          description: 'Airtable configuration has been saved successfully!',
-        });
-        onSuccess?.();
-      } else {
-        setError(data.error || 'Failed to save configuration');
-      }
-    } catch (err) {
-      const errorMessage = 'Failed to save configuration';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteConfig = async () => {
-    if (!confirm('Are you sure you want to delete the Airtable configuration?')) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/airtable/config/${businessId}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setConfig(null);
+      if (response.success) {
+        setIntegrationStatus({ isIntegrated: false });
         setFormData({
-          access_token: '',
-          base_id: '',
-          table_name: ''
+          access_token: "",
+          base_id: "",
+          table_name: "",
         });
-        toast({
-          title: 'Configuration Deleted',
-          description: 'Airtable configuration has been deleted successfully!',
-        });
+        setSuccess("Airtable integration removed successfully");
+
+        if (onSuccess) {
+          onSuccess();
+        }
       } else {
-        setError(data.error || 'Failed to delete configuration');
+        setError(response.error || "Failed to remove integration");
       }
-    } catch (err) {
-      const errorMessage = 'Failed to delete configuration';
-      setError(errorMessage);
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+    } catch (err: any) {
+      console.error("Error removing integration:", err);
+      setError("Failed to remove Airtable integration");
     } finally {
-      setLoading(false);
+      setDeleting(false);
     }
   };
 
-  if (loading && !config) {
+  useEffect(() => {
+    console.log("AirtableForm useEffect triggered, businessId:", businessId);
+    fetchIntegrationStatus();
+  }, [businessId]);
+
+  // Add debugging for state changes
+  useEffect(() => {
+    console.log("Integration status changed:", integrationStatus);
+  }, [integrationStatus]);
+
+  if (loading) {
     return (
-      <Card>
-        <CardContent className="flex items-center justify-center p-6">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span className="ml-2">Loading Airtable configuration...</span>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
     );
   }
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Database className="h-5 w-5" />
-            <CardTitle>Airtable FAQ Integration</CardTitle>
+      <CardHeader className="pb-6 border-b border-border/50">
+        <CardTitle className="flex items-center gap-3 text-xl font-semibold">
+          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+            <Database className="h-6 w-6 text-primary" />
           </div>
-          {config && (
-            <Badge variant="secondary" className="flex items-center space-x-1">
-              <CheckCircle className="h-3 w-3" />
-              <span>Configured</span>
-            </Badge>
-          )}
-        </div>
-        <CardDescription>
-          Connect your Airtable base to automatically answer FAQ questions from your customers.
-          Your Airtable table should have columns named "Question" and "Answer".
-        </CardDescription>
+          <div>
+            <span className="text-foreground">Airtable Integration</span>
+            <CardDescription className="mt-2 text-muted-foreground">
+              Connect your Airtable base to enable FAQ management and automated responses.
+            </CardDescription>
+          </div>
+        </CardTitle>
       </CardHeader>
 
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 pt-6">
         {error && (
-          <Alert variant="destructive">
-            <XCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+          <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-destructive font-medium">{error}</AlertDescription>
           </Alert>
         )}
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="access_token">Access Token *</Label>
-            <Input
-              id="access_token"
-              type="password"
-              placeholder="patXXXXXXXXXXXXXX.XXXXXXXXXXXXXX"
-              value={formData.access_token}
-              onChange={(e) => handleInputChange('access_token', e.target.value)}
-            />
-            <p className="text-sm text-muted-foreground">
-              Your Airtable personal access token. Get it from{' '}
-              <a
-                href="https://airtable.com/create/tokens"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline inline-flex items-center"
-              >
-                Airtable Developer Hub
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </a>
-            </p>
-          </div>
+        {success && (
+          <Alert className="border-green-500/50 bg-green-500/10">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
+          </Alert>
+        )}
 
-          <div className="space-y-2">
-            <Label htmlFor="base_id">Base ID *</Label>
-            <Input
-              id="base_id"
-              placeholder="appXXXXXXXXXXXXXX"
-              value={formData.base_id}
-              onChange={(e) => handleInputChange('base_id', e.target.value)}
-            />
-            <p className="text-sm text-muted-foreground">
-              Your Airtable base ID. Find it in your base URL: airtable.com/appXXXXXXXXXXXXXX/...
-            </p>
-          </div>
+        {/* Integration Status Section */}
+        <div className="bg-gradient-to-r from-accent/10 to-secondary/10 rounded-xl p-6 border border-border/50">
+          <div className="flex items-center justify-between">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="font-semibold text-lg text-foreground">Integration Status</span>
+                {integrationStatus.isIntegrated ? (
+                  <Badge className="bg-primary text-white border-0 px-3 py-1">
+                    <CheckCircle className="h-3 w-3 mr-2" />
+                    Connected
+                  </Badge>
+                ) : (
+                  <Badge variant="secondary" className="px-3 py-1 bg-muted/50 text-muted-foreground">
+                    Not Connected
+                  </Badge>
+                )}
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="table_name">Table Name *</Label>
-            <Input
-              id="table_name"
-              placeholder="FAQs"
-              value={formData.table_name}
-              onChange={(e) => handleInputChange('table_name', e.target.value)}
-            />
-            <p className="text-sm text-muted-foreground">
-              The name of your Airtable table containing FAQs. Must have "Question" and "Answer" columns.
-            </p>
+              {integrationStatus.base_id && (
+                <div className="flex items-center gap-2">
+                  <Database className="h-4 w-4 text-primary" />
+                  <span className="text-sm text-muted-foreground">Base ID:</span>
+                  <span className="text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md">
+                    {integrationStatus.base_id}
+                  </span>
+                </div>
+              )}
+
+              {integrationStatus.table_name && (
+                <div className="flex items-center gap-2">
+                  <Table className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Table:</span>
+                  <span className="text-sm font-semibold text-foreground">{integrationStatus.table_name}</span>
+                </div>
+              )}
+
+              {integrationStatus.lastUpdated && (
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Last updated: {new Date(integrationStatus.lastUpdated).toLocaleString()}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <Separator />
+        {/* Configuration Form */}
+        {!integrationStatus.isIntegrated && (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-secondary/5 to-accent/5 rounded-xl p-6 border border-border/30">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Airtable Configuration</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="access_token" className="text-sm font-medium">
+                    Access Token *
+                  </Label>
+                  <Input
+                    id="access_token"
+                    type="password"
+                    placeholder="patXXXXXXXXXXXXXX.XXXXXXXXXXXXXX"
+                    value={formData.access_token}
+                    onChange={(e) => handleInputChange("access_token", e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
 
-        <div className="flex flex-col space-y-3">
-          <div className="flex space-x-3">
-            <Button
-              onClick={testConnection}
-              disabled={testing || loading}
-              variant="outline"
-              className="flex-1"
-            >
-              {testing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Testing...
-                </>
-              ) : (
-                <>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Test Connection
-                </>
-              )}
-            </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="base_id" className="text-sm font-medium">
+                    Base ID *
+                  </Label>
+                  <Input
+                    id="base_id"
+                    type="text"
+                    placeholder="appXXXXXXXXXXXXXX"
+                    value={formData.base_id}
+                    onChange={(e) => handleInputChange("base_id", e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
 
-            <Button
-              onClick={saveConfig}
-              disabled={loading || testing}
-              className="flex-1"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Saving...
-                </>
-              ) : (
-                'Save Configuration'
-              )}
-            </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="table_name" className="text-sm font-medium">
+                    Table Name *
+                  </Label>
+                  <Input
+                    id="table_name"
+                    type="text"
+                    placeholder="FAQs"
+                    value={formData.table_name}
+                    onChange={(e) => handleInputChange("table_name", e.target.value)}
+                    className="bg-background"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
+        )}
 
-          {config && (
+        {/* Features Section */}
+        {integrationStatus.isIntegrated && (
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-secondary/5 to-accent/5 rounded-xl p-6 border border-border/30">
+              <h3 className="text-lg font-semibold text-foreground mb-4">Available Features</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                    <HelpCircle className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="font-medium text-foreground">FAQ Management</span>
+                    <Badge className="ml-2 bg-primary text-white border-0 text-xs">Active</Badge>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                    <MessageSquare className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="font-medium text-foreground">Auto Responses</span>
+                    <Badge className="ml-2 bg-primary text-white border-0 text-xs">Active</Badge>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                    <Table className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="font-medium text-foreground">Real-time Sync</span>
+                    <Badge className="ml-2 bg-primary text-white border-0 text-xs">Active</Badge>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                    <Database className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="font-medium text-foreground">Smart Matching</span>
+                    <Badge className="ml-2 bg-primary text-white border-0 text-xs">Active</Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          {integrationStatus.isIntegrated ? (
             <Button
-              onClick={deleteConfig}
-              disabled={loading || testing}
+              onClick={handleRemoveIntegration}
+              disabled={deleting}
               variant="destructive"
-              className="w-full"
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              Delete Configuration
+              {deleting ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Removing...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Trash2 className="h-4 w-4" />
+                  Remove Integration
+                </div>
+              )}
             </Button>
-          )}
-
-          {onCancel && (
+          ) : (
             <Button
-              onClick={onCancel}
-              disabled={loading || testing}
-              variant="ghost"
-              className="w-full"
+              onClick={handleSaveConfig}
+              disabled={saving}
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary text-white border-0 shadow-lg hover:shadow-xl transition-all duration-200"
             >
-              Cancel
+              {saving ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Saving...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  Save Configuration
+                </div>
+              )}
             </Button>
           )}
         </div>
-
-        <Alert>
-          <Database className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Setup Instructions:</strong>
-            <ol className="list-decimal list-inside mt-2 space-y-1 text-sm">
-              <li>Create an Airtable base with a table containing your FAQs</li>
-              <li>Ensure your table has columns named "Question" and "Answer"</li>
-              <li>Generate a personal access token from Airtable Developer Hub</li>
-              <li>Copy your base ID from the URL</li>
-              <li>Enter the table name (e.g., "FAQs", "Support", etc.)</li>
-            </ol>
-          </AlertDescription>
-        </Alert>
       </CardContent>
     </Card>
   );

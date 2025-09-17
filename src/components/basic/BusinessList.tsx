@@ -12,6 +12,7 @@ import { BusinessToneForm } from "./BusinessToneForm";
 import { GoogleWorkspaceForm } from "../integration/GoogleWorkspaceForm";
 import { SalesforceForm } from "../integration/SalesforceForm";
 import { OdooForm } from "../integration/OdooForm";
+import { AirtableForm } from "../integration/AirtableForm";
 import { ChatHistory } from "../chat/ChatHistory";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Business } from "@/lib/services/business-service";
 
-type FormType = "business" | "whatsapp" | "tone" | "chat-history" | "google" | "salesforce" | "odoo" | null;
+type FormType = "business" | "whatsapp" | "tone" | "chat-history" | "google" | "salesforce" | "odoo" | "airtable" | null;
 
 export const BusinessList: React.FC = () => {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -104,6 +105,12 @@ export const BusinessList: React.FC = () => {
     setIsFormOpen(true);
   };
 
+  const handleAirtableConfig = (business: Business) => {
+    setSelectedBusiness(business);
+    setFormType("airtable");
+    setIsFormOpen(true);
+  };
+
   const handleChatHistory = (business: Business) => {
     setSelectedBusiness(business);
     setFormType("chat-history");
@@ -124,6 +131,8 @@ export const BusinessList: React.FC = () => {
   const handleFormSuccess = () => {
     // Invalidate the businesses query to refresh the data
     queryClient.invalidateQueries({ queryKey: businessKeys.lists() });
+    // Close the modal after successful operation
+    closeForm();
   };
 
   const confirmDelete = async () => {
@@ -161,6 +170,15 @@ export const BusinessList: React.FC = () => {
         return (
           <OdooForm
             key={`odoo-${selectedBusiness?.id}`}
+            businessId={selectedBusiness?.id || 0}
+            onSuccess={handleFormSuccess}
+            onCancel={closeForm}
+          />
+        );
+      case "airtable":
+        return (
+          <AirtableForm
+            key={`airtable-${selectedBusiness?.id}`}
             businessId={selectedBusiness?.id || 0}
             onSuccess={handleFormSuccess}
             onCancel={closeForm}
@@ -280,6 +298,12 @@ export const BusinessList: React.FC = () => {
                       </div>
                       Odoo
                     </Button>
+                    <Button size="sm" variant="outline" onClick={() => handleAirtableConfig(business)}>
+                      <div className="w-4 h-4 mr-1 bg-primary rounded-sm flex items-center justify-center">
+                        <span className="text-white font-bold text-[10px]">A</span>
+                      </div>
+                      Airtable
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -309,6 +333,7 @@ export const BusinessList: React.FC = () => {
               {formType === "google" && "Google Workspace Integration"}
               {formType === "salesforce" && "Salesforce Integration"}
               {formType === "odoo" && "Odoo Integration"}
+              {formType === "airtable" && "Airtable Integration"}
             </DialogTitle>
             <DialogDescription>
               {formType === "business" && "Configure your business details"}
@@ -318,6 +343,7 @@ export const BusinessList: React.FC = () => {
               {formType === "google" && "Connect your Google Workspace account"}
               {formType === "salesforce" && "Connect your Salesforce CRM"}
               {formType === "odoo" && "Connect your Odoo ERP system"}
+              {formType === "airtable" && "Connect your Airtable CRM"}
             </DialogDescription>
           </DialogHeader>
           {renderForm()}
