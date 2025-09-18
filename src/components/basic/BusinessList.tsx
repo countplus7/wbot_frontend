@@ -10,7 +10,7 @@ import { BusinessForm } from "./BusinessForm";
 import { WhatsAppForm } from "./WhatsAppForm";
 import { BusinessToneForm } from "./BusinessToneForm";
 import { GoogleWorkspaceForm } from "../integration/GoogleWorkspaceForm";
-import { SalesforceForm } from "../integration/SalesforceForm";
+import { HubSpotForm } from "../integration/HubSpotForm";
 import { OdooForm } from "../integration/OdooForm";
 import { AirtableForm } from "../integration/AirtableForm";
 import { ChatHistory } from "../chat/ChatHistory";
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import type { Business } from "@/lib/services/business-service";
 
-type FormType = "business" | "whatsapp" | "tone" | "chat-history" | "google" | "salesforce" | "odoo" | "airtable" | null;
+type FormType = "business" | "whatsapp" | "tone" | "chat-history" | "google" | "hubspot" | "odoo" | "airtable" | null;
 
 export const BusinessList: React.FC = () => {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null);
@@ -93,9 +93,9 @@ export const BusinessList: React.FC = () => {
     setIsFormOpen(true);
   };
 
-  const handleSalesforceConfig = (business: Business) => {
+  const handleHubSpotConfig = (business: Business) => {
     setSelectedBusiness(business);
-    setFormType("salesforce");
+    setFormType("hubspot");
     setIsFormOpen(true);
   };
 
@@ -162,9 +162,9 @@ export const BusinessList: React.FC = () => {
             onCancel={closeForm}
           />
         );
-      case "salesforce":
+      case "hubspot":
         return (
-          <SalesforceForm businessId={selectedBusiness?.id || 0} onSuccess={handleFormSuccess} onCancel={closeForm} />
+          <HubSpotForm businessId={selectedBusiness?.id || 0} onSuccess={handleFormSuccess} onCancel={closeForm} />
         );
       case "odoo":
         return (
@@ -286,11 +286,11 @@ export const BusinessList: React.FC = () => {
                       </div>
                       Google
                     </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleSalesforceConfig(business)}>
+                    <Button size="sm" variant="outline" onClick={() => handleHubSpotConfig(business)}>
                       <div className="w-4 h-4 mr-1 bg-primary rounded-sm flex items-center justify-center">
-                        <span className="text-white font-bold text-[10px]">S</span>
+                        <span className="text-white font-bold text-[10px]">H</span>
                       </div>
-                      Salesforce
+                      HubSpot
                     </Button>
                     <Button size="sm" variant="outline" onClick={() => handleOdooConfig(business)}>
                       <div className="w-4 h-4 mr-1 bg-primary rounded-sm flex items-center justify-center">
@@ -331,7 +331,7 @@ export const BusinessList: React.FC = () => {
               {formType === "tone" && "Business Tone Configuration"}
               {formType === "chat-history" && "Chat History"}
               {formType === "google" && "Google Workspace Integration"}
-              {formType === "salesforce" && "Salesforce Integration"}
+              {formType === "hubspot" && "HubSpot Integration"}
               {formType === "odoo" && "Odoo Integration"}
               {formType === "airtable" && "Airtable Integration"}
             </DialogTitle>
@@ -341,7 +341,7 @@ export const BusinessList: React.FC = () => {
               {formType === "tone" && "Configure the tone and personality for this business"}
               {formType === "chat-history" && "View and manage chat history for this business"}
               {formType === "google" && "Connect your Google Workspace account"}
-              {formType === "salesforce" && "Connect your Salesforce CRM"}
+              {formType === "hubspot" && "Connect your HubSpot CRM"}
               {formType === "odoo" && "Connect your Odoo ERP system"}
               {formType === "airtable" && "Connect your Airtable CRM"}
             </DialogDescription>
