@@ -109,7 +109,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
       const data = await response.json();
 
       if (data.success) {
-        updateUser(data.user);
+        updateUser(data.data);
         setSuccess("Profile updated successfully");
         setFormData((prev) => ({
           ...prev,

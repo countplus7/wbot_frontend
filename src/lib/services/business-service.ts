@@ -75,7 +75,26 @@ export interface Message {
 export class BusinessService {
   // Business CRUD operations
   static async getBusinesses(): Promise<ApiResponse<Business[]>> {
-    return apiClient.get<Business[]>(API_ENDPOINTS.BUSINESS.LIST);
+    const response = await apiClient.get<{ businesses: Business[]; count: number }>(API_ENDPOINTS.BUSINESS.LIST);
+    
+    // Transform the response to extract the businesses array
+    if (response.success && response.data && Array.isArray(response.data.businesses)) {
+      return {
+        success: response.success,
+        data: response.data.businesses,
+        error: response.error,
+        message: response.message,
+        code: response.code,
+        timestamp: response.timestamp
+      };
+    }
+    
+    // If the response doesn't have the expected structure, return an error response
+    return {
+      success: false,
+      error: "Invalid response format",
+      data: []
+    };
   }
 
   static async getBusiness(id: number): Promise<ApiResponse<Business>> {

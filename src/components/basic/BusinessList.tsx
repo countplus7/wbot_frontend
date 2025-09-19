@@ -242,7 +242,7 @@ export const BusinessList: React.FC = () => {
       ) : (
         <div>
           {filteredBusinesses.map((business) => (
-            <Card key={business.id} className="relative p-4">
+            <Card key={business.id} className="relative p-4 mb-4">
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <CardTitle className="text-lg">{business.name}</CardTitle>
