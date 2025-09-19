@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 interface User {
   id: number;
@@ -35,32 +35,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const storedToken = localStorage.getItem('auth_token');
+        const storedToken = localStorage.getItem("auth_token");
         if (storedToken) {
           // Verify token with backend
-          const response = await fetch('/api/auth/verify', {
+          const response = await fetch("/api/auth/verify", {
             headers: {
-              'Authorization': `Bearer ${storedToken}`
-            }
+              Authorization: `Bearer ${storedToken}`,
+            },
           });
 
           if (response.ok) {
             const data = await response.json();
             if (data.success) {
-              setUser(data.user);
+              setUser(data.data.user);
               setToken(storedToken);
             } else {
               // Token is invalid, remove it
-              localStorage.removeItem('auth_token');
+              localStorage.removeItem("auth_token");
             }
           } else {
             // Token is invalid, remove it
-            localStorage.removeItem('auth_token');
+            localStorage.removeItem("auth_token");
           }
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
-        localStorage.removeItem('auth_token');
+        console.error("Auth check failed:", error);
+        localStorage.removeItem("auth_token");
       } finally {
         setIsLoading(false);
       }
@@ -72,13 +72,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = (userData: User, authToken: string) => {
     setUser(userData);
     setToken(authToken);
-    localStorage.setItem('auth_token', authToken);
+    localStorage.setItem("auth_token", authToken);
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem("auth_token");
   };
 
   const updateUser = (userData: User) => {
@@ -92,20 +92,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     logout,
-    updateUser
+    updateUser,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}; 
+};
