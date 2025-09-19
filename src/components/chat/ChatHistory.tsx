@@ -102,8 +102,8 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
     if (!conversationToDelete) return;
 
     try {
-      // Using archiveConversation as alternative to non-existent deleteConversation
-      const response = await BusinessService.archiveConversation(conversationToDelete.id);
+      // Use deleteConversation instead of archiveConversation
+      const response = await BusinessService.deleteConversation(conversationToDelete.id);
       if (response.success) {
         window.location.reload(); // Simple refresh for now
       }
@@ -212,97 +212,92 @@ export const ChatHistory: React.FC<ChatHistoryProps> = ({ businessId, businessNa
     );
   };
 
+  const conversations = conversationsData?.conversations || [];
+
   return (
-    <div className="flex gap-6 overflow-hidden">
+    <div className="flex h-full">
       {/* Conversations List */}
-      <div className="w-[350px]">
-        <Card>
-          <CardHeader className="pb-4 border-b border-border/50">
-            <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-primary" />
+      <div className="w-1/3 border-r border-border/50 flex flex-col">
+        <div className="p-4 border-b border-border/50">
+          <h3 className="text-lg font-semibold">Conversations</h3>
+          <p className="text-sm text-muted-foreground">{businessName}</p>
+        </div>
+
+        <ScrollArea className="flex-1">
+          {conversationsLoading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading conversations...</p>
               </div>
-              <span className="text-foreground">Conversations</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[80vh]">
-              {conversationsLoading ? (
-                <div className="flex flex-col items-center justify-center py-16 px-6">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                    <MessageSquare className="w-6 h-6 text-primary animate-pulse" />
-                  </div>
-                  <p className="text-muted-foreground text-sm">Loading conversations...</p>
-                </div>
-              ) : conversationsData?.conversations?.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 px-6">
-                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                    <MessageSquare className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground text-sm font-medium">No conversations found</p>
-                  <p className="text-muted-foreground text-xs mt-1">Start messaging to see conversations here</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/50">
-                  {conversationsData?.conversations?.map((conversation, index) => (
-                    <div
-                      key={conversation.id}
-                      className={`p-4 cursor-pointer transition-all duration-200 hover:bg-accent/50 relative group ${
-                        selectedConversationId === conversation.id
-                          ? "bg-primary/5 border-r-4 border-primary shadow-sm"
-                          : "hover:shadow-sm"
-                      } ${index === conversationsData?.conversations.length - 1 ? "mb-24" : ""}`}
-                      onClick={() => {
-                        setSelectedConversationId(conversation.id);
-                        loadConversationMessages(conversation.id);
-                      }}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                            <Phone className="w-4 h-4 text-primary" />
-                          </div>
-                          <div className="flex-1">
-                            <span className="font-semibold text-foreground text-sm">
-                              {formatPhoneNumber(conversation.phone_number)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant="secondary"
-                            className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20 font-medium"
-                          >
-                            {conversation.message_count}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setConversationToDelete(conversation);
-                            }}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-8 text-center">
+              <div className="mb-4">
+                <MessageSquare className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground text-sm font-medium">No conversations found</p>
+              <p className="text-muted-foreground text-xs mt-1">Start messaging to see conversations here</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/50">
+              {conversations.map((conversation, index) => (
+                <div
+                  key={conversation.id}
+                  className={`p-4 cursor-pointer transition-all duration-200 hover:bg-accent/50 relative group ${
+                    selectedConversationId === conversation.id
+                      ? "bg-primary/5 border-r-4 border-primary shadow-sm"
+                      : "hover:shadow-sm"
+                  } ${index === conversations.length - 1 ? "mb-24" : ""}`}
+                  onClick={() => {
+                    setSelectedConversationId(conversation.id);
+                    loadConversationMessages(conversation.id);
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                        <Phone className="w-4 h-4 text-primary" />
                       </div>
-                      <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
-                        <Calendar className="w-3 h-3" />
-                        <span>
-                          {conversation.last_message_at
-                            ? formatDate(conversation.last_message_at)
-                            : formatDate(conversation.created_at)}
+                      <div className="flex-1">
+                        <span className="font-semibold text-foreground text-sm">
+                          {formatPhoneNumber(conversation.phone_number)}
                         </span>
                       </div>
                     </div>
-                  ))}
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20 font-medium"
+                      >
+                        {conversation.message_count}
+                      </Badge>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConversationToDelete(conversation);
+                        }}
+                        className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+                    <Calendar className="w-3 h-3" />
+                    <span>
+                      {conversation.last_message_at
+                        ? formatDate(conversation.last_message_at)
+                        : formatDate(conversation.created_at)}
+                    </span>
+                  </div>
                 </div>
-              )}
-            </ScrollArea>
-          </CardContent>
-        </Card>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </div>
 
       {/* Messages View */}

@@ -8,7 +8,7 @@ type AuthMode = "login" | "signup";
 
 export const AuthPage: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>("login");
-  const { login } = useAuth();
+  const { login, updateUser } = useAuth(); // Add updateUser
   const navigate = useNavigate();
 
   const handleLoginSuccess = (user: any, token: string) => {

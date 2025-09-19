@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ProfileSettingsDialog } from "./ProfileSettingsDialog";
+import { ProfileSettingsDialog } from "./auth/ProfileSettingsDialog";
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth();

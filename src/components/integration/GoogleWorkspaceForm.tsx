@@ -89,18 +89,16 @@ export const GoogleWorkspaceForm: React.FC<GoogleWorkspaceFormProps> = ({ busine
 
       // Get OAuth URL directly from the API
       const response = await fetch(`/api/google/auth/${businessId}`);
-      const data = await response.json();
+      const res = await response.json();
 
-      console.log("OAuth response:", data); // Debug log
-
-      if (data.success && data.authUrl) {
+      if (res.success && res.data) {
         // Calculate center position
         const left = screen.width / 2 - 250;
         const top = screen.height / 2 - 300;
 
         // Open OAuth URL in a popup window (centered)
         const popup = window.open(
-          data.authUrl,
+          res.data.authUrl,
           "google-oauth",
           `width=500,height=600,scrollbars=yes,resizable=yes,left=${left},top=${top}`
         );

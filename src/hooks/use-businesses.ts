@@ -266,18 +266,20 @@ export function useUpdateWhatsAppConfig() {
   });
 }
 
-// Business tones hooks
-export function useBusinessTones(businessId: number, options?: { enabled?: boolean }) {
+// Update the business tone hooks to handle single tone
+
+// Business tone hooks - updated for single tone
+export function useBusinessTone(businessId: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: businessKeys.tones(businessId),
     queryFn: async () => {
-      const response = await BusinessService.getBusinessTones(businessId);
+      const response = await BusinessService.getBusinessTone(businessId);
       if (!response.success) {
-        throw new Error(response.error || "Failed to fetch business tones");
+        throw new Error(response.error || "Failed to fetch business tone");
       }
-      return response.data;
+      return response.data; // Single tone object or null
     },
-    enabled: !!businessId && (options?.enabled !== false),
+    enabled: !!businessId && options?.enabled !== false,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -307,18 +309,15 @@ export function useUpdateBusinessTone() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ toneId, data }: { toneId: number; data: any }) => {
-      const response = await BusinessService.updateBusinessTone(toneId, data);
+    mutationFn: async ({ businessId, toneId, data }: { businessId: number; toneId: number; data: any }) => {
+      const response = await BusinessService.updateBusinessTone(businessId, toneId, data);
       if (!response.success) {
         throw new Error(response.error || "Failed to update business tone");
       }
       return response.data;
     },
-    onSuccess: (updatedTone) => {
-      // Invalidate tones for the business
-      queryClient.invalidateQueries({
-        queryKey: businessKeys.tones(updatedTone.business_id),
-      });
+    onSuccess: (_, { businessId }) => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.tones(businessId) });
       toast.success("Business tone updated successfully");
     },
     onError: (error) => {
@@ -331,19 +330,15 @@ export function useDeleteBusinessTone() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (toneId: number) => {
-      const response = await BusinessService.deleteBusinessTone(toneId);
+    mutationFn: async ({ businessId, toneId }: { businessId: number; toneId: number }) => {
+      const response = await BusinessService.deleteBusinessTone(businessId, toneId);
       if (!response.success) {
         throw new Error(response.error || "Failed to delete business tone");
       }
-      return toneId;
+      return { businessId, toneId };
     },
-    onSuccess: () => {
-      // Invalidate all tone queries
-      queryClient.invalidateQueries({
-        queryKey: businessKeys.all,
-        predicate: (query) => query.queryKey.includes("tones"),
-      });
+    onSuccess: ({ businessId }) => {
+      queryClient.invalidateQueries({ queryKey: businessKeys.tones(businessId) });
       toast.success("Business tone deleted successfully");
     },
     onError: (error) => {
@@ -395,24 +390,4 @@ export function useConversations(
     enabled: !!businessId,
     staleTime: 30 * 1000, // 30 seconds
   });
-}
-
-// Custom hook for real-time business health monitoring
-export function useBusinessHealth() {
-  return useApi(
-    async () => {
-      const isHealthy = await BusinessService.healthCheck();
-      return {
-        success: true,
-        data: isHealthy,
-        message: isHealthy ? "Service is healthy" : "Service is unhealthy",
-      };
-    },
-    {
-      immediate: true,
-      retry: true,
-      retryCount: 3,
-      retryDelay: 2000,
-    }
-  );
 }

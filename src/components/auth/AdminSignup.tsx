@@ -31,12 +31,9 @@ export const AdminSignup: React.FC<AdminSignupProps> = ({ onSignupSuccess, onSwi
   const checkAdminExists = async () => {
     try {
       const response = await authService.checkAdminExists();
-      console.log("Admin exists response:", response); // Debug log
       if (response.success) {
-        // Handle both possible response formats
-        const adminExists = response.data?.adminExists ?? response.data.adminExists;
+        const adminExists = response.data?.adminExists;
         setAdminExists(adminExists);
-        console.log("Set adminExists to:", adminExists); // Debug log
       } else {
         setAdminExists(false);
       }

@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { AlertCircle, User, Mail, Lock, Save, Settings } from "lucide-react";
+import { authService } from "@/lib/services/auth-service";
 
 interface ProfileSettingsDialogProps {
   open: boolean;
@@ -97,19 +98,10 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
         updateData.password = formData.newPassword;
       }
 
-      const response = await fetch("/api/auth/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(updateData),
-      });
+      const response = await authService.updateProfile(updateData);
 
-      const data = await response.json();
-
-      if (data.success) {
-        updateUser(data.data);
+      if (response.success) {
+        updateUser(response.data);
         setSuccess("Profile updated successfully");
         setFormData((prev) => ({
           ...prev,
@@ -123,7 +115,7 @@ export const ProfileSettingsDialog: React.FC<ProfileSettingsDialogProps> = ({ op
         //   setSuccess(null);
         // }, 2000);
       } else {
-        setError(data.error || "Update failed");
+        setError(response.error || "Update failed");
       }
     } catch (err) {
       setError("Network error. Please try again.");

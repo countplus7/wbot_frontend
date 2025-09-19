@@ -32,16 +32,16 @@ export interface WhatsAppConfig {
 export interface BusinessTone {
   id: number;
   business_id: number;
-  name: string; // Change from 'tone_name' to 'name' to match backend
-  description?: string; // Add this missing field
+  name: string;
+  description?: string;
   tone_instructions: string;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateBusinessToneData {
-  tone_name: string;
-  description?: string; // Add description field
+  name: string;
+  description?: string;
   tone_instructions: string;
 }
 
@@ -53,8 +53,8 @@ export interface Conversation {
   last_message_at: string;
   message_count: number;
   status: "active" | "archived";
-  created_at: string; // Add this missing property
-  updated_at: string; // Add this missing property
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Message {
@@ -76,7 +76,7 @@ export class BusinessService {
   // Business CRUD operations
   static async getBusinesses(): Promise<ApiResponse<Business[]>> {
     const response = await apiClient.get<{ businesses: Business[]; count: number }>(API_ENDPOINTS.BUSINESS.LIST);
-    
+
     // Transform the response to extract the businesses array
     if (response.success && response.data && Array.isArray(response.data.businesses)) {
       return {
@@ -85,15 +85,15 @@ export class BusinessService {
         error: response.error,
         message: response.message,
         code: response.code,
-        timestamp: response.timestamp
+        timestamp: response.timestamp,
       };
     }
-    
+
     // If the response doesn't have the expected structure, return an error response
     return {
       success: false,
       error: "Invalid response format",
-      data: []
+      data: [],
     };
   }
 
@@ -137,26 +137,27 @@ export class BusinessService {
   }
 
   // Business tones
-  static async getBusinessTones(businessId: number): Promise<ApiResponse<BusinessTone[]>> {
-    return apiClient.get<BusinessTone[]>(`/basic/businesses/${businessId}/tones`);
+  static async getBusinessTone(businessId: number): Promise<ApiResponse<BusinessTone | null>> {
+    return apiClient.get<BusinessTone>(`/basic/businesses/${businessId}/tone`);
   }
 
   static async createBusinessTone(
     businessId: number,
     data: CreateBusinessToneData
   ): Promise<ApiResponse<BusinessTone>> {
-    return apiClient.post<BusinessTone>(`/basic/businesses/${businessId}/tones`, data);
+    return apiClient.post<BusinessTone>(`/basic/businesses/${businessId}/tone`, data);
   }
 
   static async updateBusinessTone(
+    businessId: number,
     toneId: number,
     data: Partial<CreateBusinessToneData>
   ): Promise<ApiResponse<BusinessTone>> {
-    return apiClient.put<BusinessTone>(`/basic/tones/${toneId}`, data);
+    return apiClient.put<BusinessTone>(`/basic/businesses/${businessId}/tone/${toneId}`, data);
   }
 
-  static async deleteBusinessTone(toneId: number): Promise<ApiResponse<void>> {
-    return apiClient.delete<void>(`/basic/tones/${toneId}`);
+  static async deleteBusinessTone(businessId: number, toneId: number): Promise<ApiResponse<void>> {
+    return apiClient.delete<void>(`/basic/businesses/${businessId}/tone`);
   }
 
   // Conversations and messages
@@ -175,24 +176,8 @@ export class BusinessService {
 
     const query = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
-    // The API returns { success: true, data: [...], count: 1 }
-    // But we need to transform it to { success: true, data: { conversations: [...], total: 1, page: 1, limit: 10 } }
-    const response = await apiClient.get<Conversation[]>(`/basic/businesses/${businessId}/conversations${query}`);
-
-    if (response.success && response.data) {
-      // Transform the response to match expected structure
-      return {
-        success: true,
-        data: {
-          conversations: response.data,
-          total: response.count || response.data.length,
-          page: params?.page || 1,
-          limit: params?.limit || 10,
-        },
-      };
-    }
-
-    return response as any; // Return original response if not successful
+    // Backend returns the correct structure, so we can return it directly
+    return apiClient.get<{ conversations: Conversation[]; total: number; page: number; limit: number }>(`/basic/businesses/${businessId}/conversations${query}`);
   }
 
   static async getConversationMessages(
@@ -213,11 +198,23 @@ export class BusinessService {
   }
 
   static async archiveConversation(conversationId: number): Promise<ApiResponse<void>> {
-    return apiClient.patch<void>(`/basic/conversations/${conversationId}`, { status: "archived" });
+    return apiClient.patch<void>(`/basic/conversations/${conversationId}`, { 
+      action: "update_status", 
+      status: "archived" 
+    });
   }
 
   static async unarchiveConversation(conversationId: number): Promise<ApiResponse<void>> {
-    return apiClient.patch<void>(`/basic/conversations/${conversationId}`, { status: "active" });
+    return apiClient.patch<void>(`/basic/conversations/${conversationId}`, { 
+      action: "update_status", 
+      status: "active" 
+    });
+  }
+
+  static async deleteConversation(conversationId: number): Promise<ApiResponse<void>> {
+    return apiClient.patch<void>(`/basic/conversations/${conversationId}`, { 
+      action: "delete" 
+    });
   }
 
   // Bulk operations

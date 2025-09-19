@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useCreateBusinessTone, useUpdateBusinessTone, useBusinessTones } from "@/hooks/use-businesses";
+import { useCreateBusinessTone, useUpdateBusinessTone, useBusinessTone } from "@/hooks/use-businesses";
 import type { BusinessTone } from "@/lib/services/business-service";
 
 const businessToneSchema = z.object({
-  tone_name: z.string().min(1, "Tone name is required").max(50, "Tone name cannot exceed 50 characters"),
+  name: z.string().min(1, "Tone name is required").max(50, "Tone name cannot exceed 50 characters"),
   description: z.string().max(200, "Description cannot exceed 200 characters").optional(),
   tone_instructions: z
     .string()
@@ -24,26 +24,19 @@ interface BusinessToneFormProps {
   businessId: number;
   onSuccess: () => void;
   onCancel: () => void;
-  editingTone?: BusinessTone | null;
 }
 
-export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, onSuccess, onCancel, editingTone }) => {
-  // Move the hook here
-  const { data: existingTones = [], isLoading: tonesLoading } = useBusinessTones(businessId);
-
-  // Use existingTones[0] as editingTone if not provided
-  const actualEditingTone = editingTone || existingTones[0] || null;
+export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, onSuccess, onCancel }) => {
+  // Use the single tone hook instead of tones array
+  const { data: existingTone, isLoading: toneLoading } = useBusinessTone(businessId);
 
   const createTone = useCreateBusinessTone();
   const updateTone = useUpdateBusinessTone();
 
-  // Add debug logging
-  console.log("BusinessToneForm props:", { businessId, editingTone });
-
   const form = useForm<BusinessToneFormData>({
     resolver: zodResolver(businessToneSchema),
     defaultValues: {
-      tone_name: "",
+      name: "",
       description: "",
       tone_instructions: "",
     },
@@ -51,65 +44,48 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
 
   // Enhanced loading states
   const isSubmitting = createTone.isPending || updateTone.isPending;
-  const isFormLoading = tonesLoading; // Show loading when tones are being fetched from API
+  const isFormLoading = toneLoading;
 
   // Load existing tone data when editing
   useEffect(() => {
-    console.log("useEffect triggered with editingTone:", editingTone);
-
-    if (actualEditingTone) {
-      console.log("Resetting form with existing tone data:", {
-        tone_name: actualEditingTone.name,
-        description: actualEditingTone.description,
-        tone_instructions: actualEditingTone.tone_instructions,
-      });
-
-      setTimeout(() => {
-        form.reset({
-          tone_name: actualEditingTone.name,
-          description: actualEditingTone.description || "",
-          tone_instructions: actualEditingTone.tone_instructions,
-        });
-        console.log("Form reset completed");
-      }, 100);
-    } else if (editingTone === null) {
-      // Only reset to empty when we know there's no tone (not when still loading)
-      console.log("Resetting form with empty data");
+    if (existingTone) {
       form.reset({
-        tone_name: "",
+        name: existingTone.name,
+        description: existingTone.description || "",
+        tone_instructions: existingTone.tone_instructions,
+      });
+    } else {
+      // Reset to empty when no tone exists
+      form.reset({
+        name: "",
         description: "",
         tone_instructions: "",
       });
     }
-  }, [editingTone, form, actualEditingTone]);
+  }, [existingTone, form]);
 
   const onSubmit = async (data: BusinessToneFormData) => {
     try {
-      console.log("Form data being submitted:", data); // Debug log
-
-      if (actualEditingTone) {
-        const updateData = {
-          tone_name: data.tone_name,
-          description: data.description,
-          tone_instructions: data.tone_instructions,
-        };
-        console.log("Update data:", updateData); // Debug log
-
+      if (existingTone) {
+        // Update existing tone
         await updateTone.mutateAsync({
-          toneId: actualEditingTone.id,
-          data: updateData,
+          businessId,
+          toneId: existingTone.id,
+          data: {
+            name: data.name,
+            description: data.description,
+            tone_instructions: data.tone_instructions,
+          },
         });
       } else {
-        const createData = {
-          tone_name: data.tone_name,
-          description: data.description,
-          tone_instructions: data.tone_instructions,
-        };
-        console.log("Create data:", createData); // Debug log
-
+        // Create new tone
         await createTone.mutateAsync({
           businessId,
-          data: createData,
+          data: {
+            name: data.name,
+            description: data.description,
+            tone_instructions: data.tone_instructions,
+          },
         });
       }
       onSuccess();
@@ -137,7 +113,7 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
         <fieldset disabled={isSubmitting} className="space-y-6">
           <FormField
             control={form.control}
-            name="tone_name"
+            name="name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tone Name *</FormLabel>
@@ -192,12 +168,12 @@ export const BusinessToneForm: React.FC<BusinessToneFormProps> = ({ businessId, 
             {isSubmitting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                {actualEditingTone ? "Updating..." : "Creating..."}
+                {existingTone ? "Updating..." : "Creating..."}
               </>
-            ) : actualEditingTone ? (
-              "Update"
+            ) : existingTone ? (
+              "Update Tone"
             ) : (
-              "Create"
+              "Create Tone"
             )}
           </Button>
         </div>

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useBusinesses, useDeleteBusiness, useBusinessTones, businessKeys } from "@/hooks/use-businesses";
+import { useBusinesses, useDeleteBusiness, useBusinessTone, businessKeys } from "@/hooks/use-businesses";
 import { useQueryClient } from "@tanstack/react-query";
 import { BusinessForm } from "./BusinessForm";
 import { WhatsAppForm } from "./WhatsAppForm";
@@ -41,7 +41,7 @@ export const BusinessList: React.FC = () => {
   const queryClient = useQueryClient();
 
   // Only call the hook when tone modal is opened
-  const { data: existingTones = [], isLoading: tonesLoading } = useBusinessTones(
+  const { data: existingTones = {}, isLoading: tonesLoading } = useBusinessTone(
     formType === "tone" ? selectedBusiness?.id || 0 : 0
   );
 

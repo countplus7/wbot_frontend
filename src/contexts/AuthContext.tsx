@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { authService } from "@/lib/services/auth-service";
 
 interface User {
   id: number;
@@ -37,23 +38,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const storedToken = localStorage.getItem("auth_token");
         if (storedToken) {
-          // Verify token with backend
-          const response = await fetch("/api/auth/verify", {
-            headers: {
-              Authorization: `Bearer ${storedToken}`,
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success) {
-              setUser(data.data.user);
+          // Fix: Use the auth service instead of direct fetch
+          try {
+            const response = await authService.getProfile();
+            if (response.success && response.data) {
+              setUser(response.data);
               setToken(storedToken);
             } else {
               // Token is invalid, remove it
               localStorage.removeItem("auth_token");
             }
-          } else {
+          } catch (error) {
             // Token is invalid, remove it
             localStorage.removeItem("auth_token");
           }
