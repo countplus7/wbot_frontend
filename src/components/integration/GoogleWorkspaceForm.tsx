@@ -103,12 +103,39 @@ export const GoogleWorkspaceForm: React.FC<GoogleWorkspaceFormProps> = ({ busine
           `width=500,height=600,scrollbars=yes,resizable=yes,left=${left},top=${top}`
         );
 
-        // Listen for OAuth completion
-        const checkClosed = setInterval(() => {
-          if (popup?.closed) {
-            clearInterval(checkClosed);
+        // Listen for OAuth completion via postMessage
+        const handleMessage = (event: MessageEvent) => {
+          // Verify the origin for security (adjust as needed for your domain)
+          if (event.origin !== window.location.origin) {
+            return;
+          }
+
+          if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+            // Remove event listener
+            window.removeEventListener('message', handleMessage);
             // Refresh integration status after OAuth completion
             fetchIntegrationStatus();
+          } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
+            // Remove event listener
+            window.removeEventListener('message', handleMessage);
+            setError("Google authentication failed");
+          }
+        };
+
+        // Add event listener for postMessage
+        window.addEventListener('message', handleMessage);
+
+        // Optional: Clean up if popup is manually closed (with error handling for COOP)
+        const checkPopup = setInterval(() => {
+          try {
+            if (popup?.closed) {
+              clearInterval(checkPopup);
+              window.removeEventListener('message', handleMessage);
+            }
+          } catch (e) {
+            // Handle COOP error silently - popup is likely from different origin
+            clearInterval(checkPopup);
+            window.removeEventListener('message', handleMessage);
           }
         }, 1000);
       } else {
