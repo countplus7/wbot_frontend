@@ -103,32 +103,14 @@ export const GoogleWorkspaceForm: React.FC<GoogleWorkspaceFormProps> = ({ busine
           `width=500,height=600,scrollbars=yes,resizable=yes,left=${left},top=${top}`
         );
 
-        // Listen for OAuth completion via postMessage
-        const handleMessage = (event: MessageEvent) => {
-          // Verify the origin for security (adjust as needed for your domain)
-          if (event.origin !== window.location.origin) {
-            return;
-          }
-
-          if (event.data?.type === "GOOGLE_AUTH_SUCCESS") {
-            // Remove event listener
-            window.removeEventListener("message", handleMessage);
+        // Listen for OAuth completion
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
             // Refresh integration status after OAuth completion
             fetchIntegrationStatus();
-          } else if (event.data?.type === "GOOGLE_AUTH_ERROR") {
-            // Remove event listener
-            window.removeEventListener("message", handleMessage);
-            setError("Google authentication failed");
           }
-        };
-
-        // Add event listener for postMessage
-        window.addEventListener("message", handleMessage);
-
-        // Timeout-based cleanup for OAuth popup (avoids COOP errors)
-        const cleanupTimeout = setTimeout(() => {
-          window.removeEventListener("message", handleMessage);
-        }, 5 * 60 * 1000); // 5 minutes timeout
+        }, 1000);
       } else {
         setError("Failed to get Google OAuth URL");
       }
