@@ -110,34 +110,25 @@ export const GoogleWorkspaceForm: React.FC<GoogleWorkspaceFormProps> = ({ busine
             return;
           }
 
-          if (event.data?.type === 'GOOGLE_AUTH_SUCCESS') {
+          if (event.data?.type === "GOOGLE_AUTH_SUCCESS") {
             // Remove event listener
-            window.removeEventListener('message', handleMessage);
+            window.removeEventListener("message", handleMessage);
             // Refresh integration status after OAuth completion
             fetchIntegrationStatus();
-          } else if (event.data?.type === 'GOOGLE_AUTH_ERROR') {
+          } else if (event.data?.type === "GOOGLE_AUTH_ERROR") {
             // Remove event listener
-            window.removeEventListener('message', handleMessage);
+            window.removeEventListener("message", handleMessage);
             setError("Google authentication failed");
           }
         };
 
         // Add event listener for postMessage
-        window.addEventListener('message', handleMessage);
+        window.addEventListener("message", handleMessage);
 
-        // Optional: Clean up if popup is manually closed (with error handling for COOP)
-        const checkPopup = setInterval(() => {
-          try {
-            if (popup?.closed) {
-              clearInterval(checkPopup);
-              window.removeEventListener('message', handleMessage);
-            }
-          } catch (e) {
-            // Handle COOP error silently - popup is likely from different origin
-            clearInterval(checkPopup);
-            window.removeEventListener('message', handleMessage);
-          }
-        }, 1000);
+        // Timeout-based cleanup for OAuth popup (avoids COOP errors)
+        const cleanupTimeout = setTimeout(() => {
+          window.removeEventListener("message", handleMessage);
+        }, 5 * 60 * 1000); // 5 minutes timeout
       } else {
         setError("Failed to get Google OAuth URL");
       }
